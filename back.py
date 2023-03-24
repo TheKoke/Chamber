@@ -79,13 +79,14 @@ class Painter:
         self.axes = axes
         self.model = model
 
-    def draw_reflections(self) -> None:
+    def draw_all_environment(self) -> None:
         dots = self.model.build_coordinates()
         collimator_height = 20.0
 
         self.axes.plot([0, dots[0][-1]], [0, 0], '--', color='red', label='beam line')
         self.axes.scatter(dots[0], dots[1], color='black')
 
+        # collimators
         self.__add_collimator(
             (dots[0][0], dots[1][0] - (collimator_height - self.model.h1) / 2), 
             self.model.t1 * 10, 
@@ -100,9 +101,14 @@ class Painter:
             collimator_height
         )
 
-        self.axes.plot([dots[0][4], dots[0][5]], [dots[1][4] - 3.0, dots[1][5] + 3.0], color='purple', label='target')
-        self.__add_arc()
-        self.__add_detector(dots[0][-1] + 10, 3.0)
+        self.axes.plot([dots[0][4], dots[0][5]], [dots[1][4] - 3.0, dots[1][5] + 3.0], color='purple', label='target') # target
+        self.__add_arc() # detector angles
+        self.__add_detector(dots[0][-1] + 10, 3.0) # detector
+
+    def draw_reflections(self) -> None:
+        dots = self.model.build_coordinates()
+
+        self.draw_all_environment()
 
         self.reflections_lines((dots[0][0], dots[1][0]), (dots[0][3], dots[1][3]))
         self.reflections_lines((dots[0][1], dots[1][1]), (dots[0][2], dots[1][2]))
@@ -131,35 +137,12 @@ class Painter:
 
     def draw_optic_2d(self) -> None:
         dots = self.model.build_coordinates()
-        collimator_height = 20.0
 
-        self.axes.plot([0, dots[0][-1]], [0, 0], '--', color='red', label='beam line')
-        self.axes.scatter(dots[0], dots[1], color='black')
-
-        # collimators
-        self.__add_collimator(
-            (dots[0][0], dots[1][0] - (collimator_height - self.model.h1) / 2), 
-            self.model.t1 * 10, 
-            self.model.h1, 
-            collimator_height
-        )
-
-        self.__add_collimator(
-            (dots[0][2], dots[1][2] - (collimator_height - self.model.h2) / 2), 
-            self.model.t2 * 10, 
-            self.model.h2, 
-            collimator_height
-        )
+        self.draw_all_environment()
 
         self.axes.plot([dots[0][0], dots[0][-1]], [dots[1][0], dots[1][-1]], color='red') # bounds of scatter
         self.axes.plot([dots[0][1], dots[0][-2]], [dots[1][1], dots[1][-2]], color='red')
-
-        self.axes.plot([dots[0][4], dots[0][5]], [dots[1][4] - 3.0, dots[1][5] + 3.0], color='purple', label='target') # target
-
-        self.__add_arc() # detector angles
-
-        self.__add_detector(dots[0][-1] + 10, 3.0) # detector
-
+        
         self.axes.set_title('Vertical View')
         self.axes.grid()
         self.axes.legend()
