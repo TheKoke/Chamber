@@ -78,8 +78,10 @@ class Painter:
     def __init__(self, axes: Axes, model: Geometry | Stereometry) -> None:
         self.axes = axes
         self.model = model
+        self._is_env_exist = False
 
     def draw_all_environment(self) -> None:
+        self._is_env_exist = True
         dots = self.model.build_coordinates()
         collimator_height = 20.0
 
@@ -108,7 +110,8 @@ class Painter:
     def draw_reflections(self) -> None:
         dots = self.model.build_coordinates()
 
-        self.draw_all_environment()
+        if not self._is_env_exist:
+            self.draw_all_environment()
 
         self.reflections_lines((dots[0][0], dots[1][0]), (dots[0][3], dots[1][3]))
         self.reflections_lines((dots[0][1], dots[1][1]), (dots[0][2], dots[1][2]))
@@ -133,12 +136,17 @@ class Painter:
             self.axes.plot(xs, ys, color='green')
 
     def draw_optic_3d(self) -> None:
-        pass
+        if not self.model.__class__ == Stereometry:
+            return
 
     def draw_optic_2d(self) -> None:
+        if not self.model.__class__ == Geometry:
+            return
+        
+        if not self._is_env_exist:
+            self.draw_all_environment()
+        
         dots = self.model.build_coordinates()
-
-        self.draw_all_environment()
 
         self.axes.plot([dots[0][0], dots[0][-1]], [dots[1][0], dots[1][-1]], color='red') # bounds of scatter
         self.axes.plot([dots[0][1], dots[0][-2]], [dots[1][1], dots[1][-2]], color='red')
