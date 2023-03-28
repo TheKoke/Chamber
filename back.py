@@ -25,7 +25,7 @@ class Geometry:
     D'G = D2
     '''
 
-    def __init__(self, h1: float, h2: float, d1: float, d2: float, d3: float, t1: float = 2.0, t2: float = 2.0) -> None:
+    def __init__(self, h1: float, h2: float, d1: float, d2: float, d3: float, t1: float = 2.0, t2: float = 2.0, view: str = 'h') -> None:
         """
         h1 = radius of 1st collimator,\n
         h2 = radius of 2nd collimator,\n
@@ -43,6 +43,8 @@ class Geometry:
         self.d1 = d1
         self.d2 = d2
         self.d3 = d3
+
+        self.view = view
 
     def find_second_distance(self) -> float:
         return self.d1 - self.h1 * self.d1 / (self.h1 + self.h2)
@@ -70,8 +72,8 @@ class Geometry:
 
 
 class Stereometry(Geometry):
-    def __init__(self, h1: float, h2: float, d1: float, d2: float, d3: float, t1: float = 2, t2: float = 2) -> None:
-        super().__init__(h1, h2, d1, d2, d3, t1, t2)
+    def __init__(self, h1: float, h2: float, d1: float, d2: float, d3: float, t1: float = 2, t2: float = 2, view: str = 'h') -> None:
+        super().__init__(h1, h2, d1, d2, d3, t1, t2, view)
 
 
 class Painter:
@@ -85,7 +87,6 @@ class Painter:
         dots = self.model.build_coordinates()
         collimator_height = 20.0
 
-        self.axes.plot([0, dots[0][-1]], [0, 0], '--', color='red', label='beam line')
         self.axes.scatter(dots[0], dots[1], color='black')
 
         # collimators
@@ -103,9 +104,11 @@ class Painter:
             collimator_height
         )
 
-        self.axes.plot([dots[0][4], dots[0][5]], [dots[1][4] - 3.0, dots[1][5] + 3.0], color='purple', label='target') # target
         self.__add_arc() # detector angles
         self.__add_detector(dots[0][-1] + 10, 3.0) # detector
+        self.axes.plot([dots[0][4], dots[0][5]], [dots[1][4] - 3.0, dots[1][5] + 3.0], color='purple', label='target') # target
+
+        self.axes.plot([0, dots[0][-1]], [0, 0], '--', color='red', label='beam line')
 
     def draw_reflections(self) -> None:
         dots = self.model.build_coordinates()
@@ -113,26 +116,32 @@ class Painter:
         if not self._is_env_exist:
             self.draw_all_environment()
 
+            self.axes.set_title('Vertical View' if self.model.view == 'v' else 'Horizonthal view')
+            self.axes.grid()
+
         self.reflections_lines((dots[0][0], dots[1][0]), (dots[0][3], dots[1][3]))
         self.reflections_lines((dots[0][1], dots[1][1]), (dots[0][2], dots[1][2]))
 
-        self.axes.set_title('Vertical View')
-        self.axes.grid()
+        self.reflections_lines((dots[0][0] + self.model.t1 * 10, dots[1][0]), (dots[0][3], dots[1][3]), num=1, legend='reflections')
+        self.reflections_lines((dots[0][1] + self.model.t1 * 10, dots[1][1]), (dots[0][2], dots[1][2]), num=1)
+
         self.axes.legend()
 
-    def reflections_lines(self, first_border: tuple[float, float], second_border: tuple[float, float], num: int = 10) -> None:
+    def reflections_lines(self, first_border: tuple[float, float], second_border: tuple[float, float], num: int = 11, legend: str = '') -> None:
         systematrix = np.array([[first_border[0], 1], [second_border[0], 1]])
         righthand = np.array([first_border[1], second_border[1]])
         coeffs = np.linalg.solve(systematrix, righthand)
 
-        for i in range(num + 1):
+        for i in range(num):
             xs = np.linspace(first_border[0] + self.model.t1 * i, second_border[0] + self.model.t1 * i, 3)
-            ys = coeffs[0] * xs + (first_border[1] - self.model.t1 * i * coeffs[0])
+            ys = coeffs[0] * xs + (coeffs[1] - self.model.t1 * i * coeffs[0])
             self.axes.plot(xs, ys, color='green')
+            if legend != '':
+                self.axes.plot(xs, ys, color='green', label=legend)
 
-        for i in range(num + 1):
+        for i in range(num):
             xs = np.linspace(second_border[0] + self.model.t1 * i, 1.65 * second_border[0], 3)
-            ys = -coeffs[0] * xs + (np.sign(second_border[1]) * self.model.h2 + second_border[1] + self.model.t1 * i * coeffs[0])
+            ys = -coeffs[0] * xs + (np.sign(second_border[1]) * self.model.h2 - coeffs[1] + self.model.t1 * i * coeffs[0])
             self.axes.plot(xs, ys, color='green')
 
     def draw_optic_3d(self) -> None:
@@ -145,14 +154,15 @@ class Painter:
         
         if not self._is_env_exist:
             self.draw_all_environment()
-        
+
+            self.axes.set_title('Vertical View' if self.model.view == 'v' else 'Horizonthal view')
+            self.axes.grid()
+
         dots = self.model.build_coordinates()
 
-        self.axes.plot([dots[0][0], dots[0][-1]], [dots[1][0], dots[1][-1]], color='red') # bounds of scatter
+        self.axes.plot([dots[0][0], dots[0][-1]], [dots[1][0], dots[1][-1]], color='red', label='optic scatter') # bounds of scatter
         self.axes.plot([dots[0][1], dots[0][-2]], [dots[1][1], dots[1][-2]], color='red')
-        
-        self.axes.set_title('Vertical View')
-        self.axes.grid()
+
         self.axes.legend()
 
     def __add_arc(self) -> None:
@@ -183,5 +193,7 @@ if __name__ == '__main__':
     g = Geometry(3, 3, 960, 360, 220)
     p = Painter(ax, g)
 
+    p.draw_optic_2d()
     p.draw_reflections()
+    plt.tight_layout()
     plt.show()
