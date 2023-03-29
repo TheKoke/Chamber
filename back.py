@@ -6,23 +6,13 @@ from matplotlib.patches import Rectangle
 
 class Geometry:
     '''
-              F 
              /|
-        A  C/ | 
+            / | 
         |\ /| |
         | X | |
         |/ \| |
-        B  D\ |
+            \ |
              \|
-        B' D' G
-
-    Intersection dot => O
-    AB = H1
-    CD = H2
-    FG - ?
-
-    B'D' = D1
-    D'G = D2
     '''
 
     def __init__(self, h1: float, h2: float, d1: float, d2: float, d3: float, t1: float = 2.0, t2: float = 2.0, view: str = 'h') -> None:
@@ -49,15 +39,19 @@ class Geometry:
     def find_second_distance(self) -> float:
         return self.d1 - self.h1 * self.d1 / (self.h1 + self.h2)
     
-    def find_spot_radius(self) -> float:
+    def calc_spot_radius(self) -> float:
         return self.h2 * (self.find_second_distance() + self.d2 - self.t2) / self.find_second_distance()
     
-    def find_detector_size(self) -> float:
+    def calc_detector_size(self) -> float:
         return self.h2 * (self.find_second_distance() + self.d2 + self.d3 - self.t2) / self.find_second_distance()
+    
+    def calc_minimum_angle(self) -> float:
+        scale_value =  360 / (2 * np.pi * self.d3)
+        return scale_value * self.calc_detector_size() / 2
     
     def build_coordinates(self) -> list[list[float]]:
         distances = [0, self.d1, self.d2, self.d3]
-        heights = [self.h1, self.h2, self.find_spot_radius(), self.find_detector_size()]
+        heights = [self.h1, self.h2, self.calc_spot_radius(), self.calc_detector_size()]
 
         dots = [[], []]
         for i in range(4):
@@ -70,14 +64,8 @@ class Geometry:
 
         return dots
 
-
-class Stereometry(Geometry):
-    def __init__(self, h1: float, h2: float, d1: float, d2: float, d3: float, t1: float = 2, t2: float = 2, view: str = 'h') -> None:
-        super().__init__(h1, h2, d1, d2, d3, t1, t2, view)
-
-
 class Painter:
-    def __init__(self, axes: Axes, model: Geometry | Stereometry) -> None:
+    def __init__(self, axes: Axes, model: Geometry) -> None:
         self.axes = axes
         self.model = model
         self._is_env_exist = False
@@ -144,14 +132,7 @@ class Painter:
             ys = -coeffs[0] * xs + (np.sign(second_border[1]) * self.model.h2 - coeffs[1] + self.model.t1 * i * coeffs[0])
             self.axes.plot(xs, ys, color='green')
 
-    def draw_optic_3d(self) -> None:
-        if not self.model.__class__ == Stereometry:
-            return
-
     def draw_optic_2d(self) -> None:
-        if not self.model.__class__ == Geometry:
-            return
-        
         if not self._is_env_exist:
             self.draw_all_environment()
 
