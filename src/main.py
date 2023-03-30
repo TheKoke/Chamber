@@ -18,6 +18,8 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.axes = self.canvas.figure.subplots()
         self.toolbar = NavigationToolbar2QT(self.canvas, self)
 
+        self.canvas.figure.tight_layout()
+
         self.matplotlib_layout.addWidget(self.toolbar)
         self.matplotlib_layout.addWidget(self.canvas)
 
@@ -30,23 +32,30 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.model = Geometry(h1, h2, d1, d2, d3, t1, t2, 'v' if self._is_vertical_view else 'h')
         self.painter = Painter(self.axes, self.model)
 
+        # general properties
+        self.d1_spinbox.valueChanged.connect(self.prop_change)
+        self.d2_spinbox.valueChanged.connect(self.prop_change)
+        self.d3_spinbox.valueChanged.connect(self.prop_change)
+        self.r1_spinbox.valueChanged.connect(self.prop_change)
+        self.r2_spinbox.valueChanged.connect(self.prop_change)
+        self.t1_spinbox.valueChanged.connect(self.prop_change)
+        self.t2_spinbox.valueChanged.connect(self.prop_change)
+
+        # tilting properties
+        self.up_spinbox_1.valueChanged.connect(self.tilt_change)
+        self.down_spinbox_1.valueChanged.connect(self.tilt_change)
+        self.right_spinbox_1.valueChanged.connect(self.tilt_change)
+        self.left_spinbox_1.valueChanged.connect(self.tilt_change)
+        self.up_spinbox_2.valueChanged.connect(self.tilt_change)
+        self.down_spinbox_2.valueChanged.connect(self.tilt_change)
+        self.right_spinbox_2.valueChanged.connect(self.tilt_change)
+        self.left_spinbox_2.valueChanged.connect(self.tilt_change)
+
         self.optics_button.clicked.connect(self.draw_optics)
         self.reflections_button.clicked.connect(self.draw_reflections)
+        self.view_button.clicked.connect(self.change_view)
 
-        self.d1_spinbox.valueChanged.connect(self.on_change)
-        self.d2_spinbox.valueChanged.connect(self.on_change)
-        self.d3_spinbox.valueChanged.connect(self.on_change)
-        self.r1_spinbox.valueChanged.connect(self.on_change)
-        self.r2_spinbox.valueChanged.connect(self.on_change)
-        self.t1_spinbox.valueChanged.connect(self.on_change)
-        self.t2_spinbox.valueChanged.connect(self.on_change)
-
-    def on_change(self) -> None:
-        self.clear_output()
-
-        self.axes.clear()
-        self.canvas.draw()
-
+    def _new_model(self) -> None:
         d1, d2, d3 = self.d1_spinbox.value(), self.d2_spinbox.value(), self.d3_spinbox.value()
         h1, h2 = self.r1_spinbox.value(), self.r2_spinbox.value()
         t1, t2 = self.t1_spinbox.value(), self.t2_spinbox.value()
@@ -54,8 +63,19 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.model = Geometry(h1, h2, d1, d2, d3, t1, t2, 'v' if self._is_vertical_view else 'h')
         self.painter = Painter(self.axes, self.model)
 
+    def prop_change(self) -> None:
+        self.clear_output()
+
+        self.axes.clear()
+        self.canvas.draw()
+
+        self._new_model()
+
+    def tilt_change(self) -> None:
+        pass
+
     def draw_optics(self) -> None:
-        self.painter.draw_optic_2d()
+        self.painter.draw_optic()
         self.canvas.draw()
 
         self.show_output()
@@ -75,6 +95,14 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.spot_out.setText(f'Spot on the target (mm): ')
         self.detector_out.setText(f'Spot on detector (mm): ')
         self.angle_out.setText(f'Minimum angle (degrees): ')
+
+    def change_view(self) -> None:
+        self._is_vertical_view = not self._is_vertical_view
+
+        self.axes.clear()
+        self.canvas.draw()
+
+        self._new_model()
 
 
 if __name__ == '__main__':

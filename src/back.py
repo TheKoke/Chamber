@@ -6,14 +6,16 @@ from matplotlib.patches import Rectangle
 
 class Geometry:
     '''
-             /|
-            / | 
-        |\ /| |
-        | X | |
-        |/ \| |
-            \ |
-             \|
+         /|
+        / | 
+    |\ /| |
+    | X | |
+    |/ \| |
+        \ |
+         \|
     '''
+
+    ENVIRONMENT_COUNT = 4
 
     def __init__(self, h1: float, h2: float, d1: float, d2: float, d3: float, t1: float = 2.0, t2: float = 2.0, view: str = 'h') -> None:
         """
@@ -36,6 +38,8 @@ class Geometry:
 
         self.view = view
 
+        self.coordinates = self.build_coordinates()
+
     def find_second_distance(self) -> float:
         return self.d1 - self.h1 * self.d1 / (self.h1 + self.h2)
     
@@ -54,42 +58,73 @@ class Geometry:
         heights = [self.h1, self.h2, self.calc_spot_radius(), self.calc_detector_size()]
 
         dots = [[], []]
-        for i in range(4):
+        for i in range(self.ENVIRONMENT_COUNT): # x-coordinates
             dots[0].append(sum(distances[:i + 1]))
             dots[0].append(sum(distances[:i + 1]))
 
-        for i in range(4):
+        for i in range(self.ENVIRONMENT_COUNT): # y-coordinates
             dots[1].append(-heights[i] / 2)
             dots[1].append(heights[i] / 2)
 
         return dots
+    
+    def shift_dot(self, object_index: int, direction: str, val: float) -> None:
+        possible_directions = ['up', 'down', 'right', 'left']
+
+        if object_index < 0 or object_index >= self.ENVIRONMENT_COUNT:
+            return
+
+        if direction not in possible_directions:
+            return
+        
+        if direction == 'up':
+            self.coordinates[1][object_index * 2] += val
+            self.coordinates[1][object_index * 2 + 1] += val
+
+        if direction == 'down':
+            self.coordinates[1][object_index * 2] -= val
+            self.coordinates[1][object_index * 2 + 1] -= val
+
+        if direction == 'right':
+            self.coordinates[0][object_index * 2] += val
+            self.coordinates[0][object_index * 2 + 1] += val
+
+        if direction == 'left':
+            self.coordinates[0][object_index * 2] -= val
+            self.coordinates[0][object_index * 2 + 1] -= val
 
 class Painter:
+
+    COLLIMATOR_HEIGHT = 20.0
+    DETECTOR_WIDTH = 70
+    
     def __init__(self, axes: Axes, model: Geometry) -> None:
         self.axes = axes
         self.model = model
+
         self._is_env_exist = False
+        self._is_optic_drawn = False
+        self._is_reflections_drawn = False
 
     def draw_all_environment(self) -> None:
         self._is_env_exist = True
-        dots = self.model.build_coordinates()
-        collimator_height = 20.0
+        dots = self.model.coordinates
 
         self.axes.scatter(dots[0], dots[1], color='black')
 
         # collimators
         self.__add_collimator(
-            (dots[0][0], dots[1][0] - (collimator_height - self.model.h1) / 2), 
+            (dots[0][0], dots[1][0] - (self.COLLIMATOR_HEIGHT - self.model.h1) / 2), 
             self.model.t1 * 10, 
             self.model.h1, 
-            collimator_height
+            self.COLLIMATOR_HEIGHT
         )
 
         self.__add_collimator(
-            (dots[0][2], dots[1][2] - (collimator_height - self.model.h2) / 2), 
+            (dots[0][2], dots[1][2] - (self.COLLIMATOR_HEIGHT - self.model.h2) / 2), 
             self.model.t2 * 10, 
             self.model.h2, 
-            collimator_height
+            self.COLLIMATOR_HEIGHT
         )
 
         self.__add_arc() # detector angles
@@ -99,13 +134,17 @@ class Painter:
         self.axes.plot([0, dots[0][-1]], [0, 0], '--', color='red', label='beam line')
 
     def draw_reflections(self) -> None:
-        dots = self.model.build_coordinates()
+        if self._is_reflections_drawn:
+            return
 
         if not self._is_env_exist:
             self.draw_all_environment()
 
             self.axes.set_title('Vertical View' if self.model.view == 'v' else 'Horizonthal view')
             self.axes.grid()
+
+        self._is_reflections_drawn = True
+        dots = self.model.coordinates
 
         self.reflections_lines((dots[0][0], dots[1][0]), (dots[0][3], dots[1][3]))
         self.reflections_lines((dots[0][1], dots[1][1]), (dots[0][2], dots[1][2]))
@@ -115,31 +154,37 @@ class Painter:
 
         self.axes.legend()
 
-    def reflections_lines(self, first_border: tuple[float, float], second_border: tuple[float, float], num: int = 11, legend: str = '') -> None:
+    def reflections_lines(self, first_border: tuple[float, float], second_border: tuple[float, float], num: int = 10, legend: str = '') -> None:
         systematrix = np.array([[first_border[0], 1], [second_border[0], 1]])
         righthand = np.array([first_border[1], second_border[1]])
         coeffs = np.linalg.solve(systematrix, righthand)
 
+        first_step = self.model.t1 * 10 / num
         for i in range(num):
-            xs = np.linspace(first_border[0] + self.model.t1 * i, second_border[0] + self.model.t1 * i, 3)
-            ys = coeffs[0] * xs + (coeffs[1] - self.model.t1 * i * coeffs[0])
+            xs = np.linspace(first_border[0] + first_step * i, second_border[0] + first_step * i, 3)
+            ys = coeffs[0] * xs + (coeffs[1] - first_step * i * coeffs[0])
             self.axes.plot(xs, ys, color='green')
             if legend != '':
                 self.axes.plot(xs, ys, color='green', label=legend)
 
+        second_step = self.model.t2 * 10 / num
         for i in range(num):
-            xs = np.linspace(second_border[0] + self.model.t1 * i, 1.65 * second_border[0], 3)
-            ys = -coeffs[0] * xs + (np.sign(second_border[1]) * self.model.h2 - coeffs[1] + self.model.t1 * i * coeffs[0])
+            xs = np.linspace(second_border[0] + second_step * i, self.model.d1 + self.model.d2 + self.model.d3 + 15, 3)
+            ys = -coeffs[0] * xs + (np.sign(second_border[1]) * self.model.h2 - coeffs[1] + second_step * i * coeffs[0])
             self.axes.plot(xs, ys, color='green')
 
-    def draw_optic_2d(self) -> None:
+    def draw_optic(self) -> None:
+        if self._is_optic_drawn:
+            return
+
         if not self._is_env_exist:
             self.draw_all_environment()
 
             self.axes.set_title('Vertical View' if self.model.view == 'v' else 'Horizonthal view')
             self.axes.grid()
 
-        dots = self.model.build_coordinates()
+        self._is_optic_drawn = True
+        dots = self.model.coordinates
 
         self.axes.plot([dots[0][0], dots[0][-1]], [dots[1][0], dots[1][-1]], color='red', label='optic scatter') # bounds of scatter
         self.axes.plot([dots[0][1], dots[0][-2]], [dots[1][1], dots[1][-2]], color='red')
@@ -150,7 +195,7 @@ class Painter:
         ys = np.linspace(10, -10, 20)
         xs = np.sqrt(self.model.d3 ** 2 - ys ** 2) + (self.model.d1 + self.model.d2)
 
-        mm_per_degree = 3.837
+        mm_per_degree = (2 * np.pi * self.model.d3) / 360
         
         degrees = np.hstack([np.arange(0, ys.min(), -mm_per_degree), np.arange(0, ys.max(), mm_per_degree)])
         scats = np.sqrt(self.model.d3 ** 2 - degrees ** 2) + (self.model.d1 + self.model.d2)
@@ -164,7 +209,7 @@ class Painter:
         self.axes.add_patch(Rectangle((xy[0], xy[1] + height + radius), thickness, height, color='black'))
 
     def __add_detector(self, x: float, height: float) -> None:
-        self.axes.add_patch(Rectangle((x, -height / 2), 70, height, color='blue', label='detector'))
+        self.axes.add_patch(Rectangle((x, -height / 2), self.DETECTOR_WIDTH, height, color='blue', label='detector'))
     
 
 
@@ -174,7 +219,7 @@ if __name__ == '__main__':
     g = Geometry(3, 3, 960, 360, 220)
     p = Painter(ax, g)
 
-    p.draw_optic_2d()
+    p.draw_optic()
     p.draw_reflections()
     plt.tight_layout()
     plt.show()
