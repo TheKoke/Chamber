@@ -55,6 +55,15 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.reflections_button.clicked.connect(self.draw_reflections)
         self.view_button.clicked.connect(self.change_view)
 
+        self.up_spinbox_1.valueChanged.connect(self.tilt_change)
+        self.up_spinbox_2.valueChanged.connect(self.tilt_change)
+        self.down_spinbox_1.valueChanged.connect(self.tilt_change)
+        self.down_spinbox_2.valueChanged.connect(self.tilt_change)
+        self.right_spinbox_1.valueChanged.connect(self.tilt_change)
+        self.right_spinbox_2.valueChanged.connect(self.tilt_change)
+        self.left_spinbox_1.valueChanged.connect(self.tilt_change)
+        self.left_spinbox_2.valueChanged.connect(self.tilt_change)
+
     def _new_model(self) -> None:
         d1, d2, d3 = self.d1_spinbox.value(), self.d2_spinbox.value(), self.d3_spinbox.value()
         h1, h2 = self.r1_spinbox.value(), self.r2_spinbox.value()
@@ -70,9 +79,35 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.canvas.draw()
 
         self._new_model()
+        self.do_shifts()
 
     def tilt_change(self) -> None:
-        pass
+        self.clear_output()
+
+        self.axes.clear()
+        self.canvas.draw()
+
+        self.do_shifts()
+        
+    def do_shifts(self) -> None:
+        if self._is_vertical_view:
+            ups = self.up_spinbox_1.value(), self.up_spinbox_2.value()
+            downs = self.down_spinbox_1.value(), self.down_spinbox_1.value()
+
+            self._new_model()
+            
+            for i in range(len(ups)):
+                self.model.shift_dots(i, 'up', ups[i])
+                self.model.shift_dots(i, 'down', downs[i])
+        else:
+            rights = self.right_spinbox_1.value(), self.right_spinbox_2.value()
+            lefts = self.left_spinbox_1.value(), self.left_spinbox_2.value()
+
+            self._new_model()
+
+            for i in range(len(lefts)):
+                self.model.shift_dots(i, 'right', rights[i])
+                self.model.shift_dots(i, 'left', lefts[i])
 
     def draw_optics(self) -> None:
         self.painter.draw_optic()
@@ -103,6 +138,7 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.canvas.draw()
 
         self._new_model()
+        self.do_shifts()
 
 
 if __name__ == '__main__':

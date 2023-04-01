@@ -53,6 +53,9 @@ class Geometry:
         scale_value =  360 / (2 * np.pi * self.d3)
         return scale_value * self.calc_detector_size() / 2
     
+    def spot_on_tatget(self) -> float:
+        pass # TODO: implement this method
+    
     def build_coordinates(self) -> list[list[float]]:
         distances = [0, self.d1, self.d2, self.d3]
         heights = [self.h1, self.h2, self.calc_spot_radius(), self.calc_detector_size()]
@@ -68,8 +71,21 @@ class Geometry:
 
         return dots
     
-    def shift_dot(self, object_index: int, direction: str, val: float) -> None:
-        possible_directions = ['up', 'down', 'right', 'left']
+    def rebuild(self) -> None:
+        heights = [self.h1, self.h2]
+        dots = [self.coordinates[0], self.coordinates[1][:4]]
+
+        first_coeffs = np.linalg.solve(np.array([[dots[0][0], 1], [dots[0][3], 1]]), np.array([dots[1][0], dots[1][3]]))
+        sec_coeffs = np.linalg.solve(np.array([[dots[0][1], 1], [dots[0][2], 1]]), np.array([dots[1][1], dots[1][2]]))
+
+        for i in range(len(heights), 4):
+            dots[1].append(sec_coeffs[0] * dots[0][i * 2]  + sec_coeffs[1])
+            dots[1].append(first_coeffs[0] * dots[0][i * 2] + first_coeffs[1])
+
+        self.coordinates = dots
+    
+    def shift_dots(self, object_index: int, direction: str, val: float) -> None:
+        possible_directions = ['up', 'down'] if self.view == 'v' else ['right', 'left']
 
         if object_index < 0 or object_index >= self.ENVIRONMENT_COUNT:
             return
@@ -77,26 +93,20 @@ class Geometry:
         if direction not in possible_directions:
             return
         
-        if direction == 'up':
+        if direction == 'up' or direction == 'right':
             self.coordinates[1][object_index * 2] += val
             self.coordinates[1][object_index * 2 + 1] += val
 
-        if direction == 'down':
+        if direction == 'down' or direction == 'left':
             self.coordinates[1][object_index * 2] -= val
             self.coordinates[1][object_index * 2 + 1] -= val
 
-        if direction == 'right':
-            self.coordinates[0][object_index * 2] += val
-            self.coordinates[0][object_index * 2 + 1] += val
-
-        if direction == 'left':
-            self.coordinates[0][object_index * 2] -= val
-            self.coordinates[0][object_index * 2 + 1] -= val
-
 class Painter:
 
-    COLLIMATOR_HEIGHT = 20.0
     DETECTOR_WIDTH = 70
+    ARC_HEIGHT = 20
+    TARGET_HEIGHT = 14
+    COLLIMATOR_HEIGHT = 20.0
     
     def __init__(self, axes: Axes, model: Geometry) -> None:
         self.axes = axes
@@ -129,7 +139,7 @@ class Painter:
 
         self.__add_arc() # detector angles
         self.__add_detector(dots[0][-1] + 10, 3.0) # detector
-        self.axes.plot([dots[0][4], dots[0][5]], [dots[1][4] - 3.0, dots[1][5] + 3.0], color='purple', label='target') # target
+        self.axes.plot([dots[0][4], dots[0][5]], [-self.TARGET_HEIGHT / 2, self.TARGET_HEIGHT / 2], color='purple', label='target') # target
 
         self.axes.plot([0, dots[0][-1]], [0, 0], '--', color='red', label='beam line')
 
@@ -170,7 +180,9 @@ class Painter:
         second_step = self.model.t2 * 10 / num
         for i in range(num):
             xs = np.linspace(second_border[0] + second_step * i, self.model.d1 + self.model.d2 + self.model.d3 + 15, 3)
-            ys = -coeffs[0] * xs + (np.sign(second_border[1]) * self.model.h2 - coeffs[1] + second_step * i * coeffs[0])
+            
+            shift_coeff = second_border[1] + second_border[0] * coeffs[0]
+            ys = -coeffs[0] * xs + (shift_coeff + second_step * i * coeffs[0])
             self.axes.plot(xs, ys, color='green')
 
     def draw_optic(self) -> None:
@@ -192,7 +204,7 @@ class Painter:
         self.axes.legend()
 
     def __add_arc(self) -> None:
-        ys = np.linspace(10, -10, 20)
+        ys = np.linspace(-self.ARC_HEIGHT / 2, self.ARC_HEIGHT / 2, 20)
         xs = np.sqrt(self.model.d3 ** 2 - ys ** 2) + (self.model.d1 + self.model.d2)
 
         mm_per_degree = (2 * np.pi * self.model.d3) / 360
@@ -216,8 +228,11 @@ class Painter:
 if __name__ == '__main__':
     fig, ax = plt.subplots()
 
-    g = Geometry(3, 3, 960, 360, 220)
+    g = Geometry(3, 3, 960, 360, 220, view='v')
     p = Painter(ax, g)
+
+    g.shift_dots(0, 'up', -2.0)
+    g.rebuild()
 
     p.draw_optic()
     p.draw_reflections()
