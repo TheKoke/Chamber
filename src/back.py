@@ -1,7 +1,25 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Rectangle, Ellipse
+
+
+def draw_ellipse(axis: Axes, r1: float, r2: float, shift_1: float, shift_2: float) -> None:
+    d = np.sqrt(shift_1 ** 2 + shift_2 ** 2)
+
+    s = (r1 + r2 + d) / 2
+    width = (r1 + r2 - d)
+
+    height = width
+    if d != 0:
+        height = 4 * np.sqrt(s * (s - r1) * (s - r2) * (s - d)) / d
+
+    ang = 0
+    if shift_1 != 0:
+        ang += (np.tan(shift_2 / shift_1) - np.pi / 2) * 180 / np.pi
+
+    axis.add_patch(Rectangle([-3.5, -3.5], 7, 7, color='purple', label='target'))
+    axis.add_patch(Ellipse([0, 0], width, height, angle=ang, color='red', label='beam spot'))
 
 
 class Geometry:
@@ -52,9 +70,6 @@ class Geometry:
     def calc_minimum_angle(self) -> float:
         scale_value =  360 / (2 * np.pi * self.d3)
         return scale_value * self.calc_detector_size() / 2
-    
-    def spot_on_tatget(self) -> float:
-        pass # TODO: implement this method
     
     def build_coordinates(self) -> list[list[float]]:
         distances = [0, self.d1, self.d2, self.d3]
@@ -222,7 +237,6 @@ class Painter:
 
     def __add_detector(self, x: float, height: float) -> None:
         self.axes.add_patch(Rectangle((x, -height / 2), self.DETECTOR_WIDTH, height, color='blue', label='detector'))
-    
 
 
 if __name__ == '__main__':
