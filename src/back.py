@@ -16,7 +16,7 @@ def draw_ellipse(axis: Axes, r1: float, r2: float, shift_1: float, shift_2: floa
 
     ang = 0
     if shift_1 != 0:
-        ang += (np.tan(shift_2 / shift_1) - np.pi / 2) * 180 / np.pi
+        ang += (np.arctan(shift_2 / shift_1)) * 180 / np.pi
 
     axis.add_patch(Rectangle([-3.5, -3.5], 7, 7, color='purple', label='target'))
     axis.add_patch(Ellipse([0, 0], width, height, angle=ang, color='red', label='beam spot'))
@@ -35,7 +35,7 @@ class Geometry:
 
     ENVIRONMENT_COUNT = 4
 
-    def __init__(self, h1: float, h2: float, d1: float, d2: float, d3: float, t1: float = 2.0, t2: float = 2.0, view: str = 'h') -> None:
+    def __init__(self, h1: float, h2: float, d1: float, d2: float, d3: float, t1: float = 2.0, t2: float = 2.0, view: str = 'v') -> None:
         """
         h1 = radius of 1st collimator,\n
         h2 = radius of 2nd collimator,\n
@@ -100,7 +100,7 @@ class Geometry:
         self.coordinates = dots
     
     def shift_dots(self, object_index: int, direction: str, val: float) -> None:
-        possible_directions = ['up', 'down'] if self.view == 'v' else ['right', 'left']
+        possible_directions = ['vertical', 'horizonthal']
 
         if object_index < 0 or object_index >= self.ENVIRONMENT_COUNT:
             return
@@ -108,11 +108,7 @@ class Geometry:
         if direction not in possible_directions:
             return
         
-        if direction == 'up' or direction == 'right':
-            self.coordinates[1][object_index * 2] += val
-            self.coordinates[1][object_index * 2 + 1] += val
-
-        if direction == 'down' or direction == 'left':
+        if (direction == 'vertical' and self.view == 'v') or (direction == 'horizonthal' and self.view == 'h'):
             self.coordinates[1][object_index * 2] -= val
             self.coordinates[1][object_index * 2 + 1] -= val
 
