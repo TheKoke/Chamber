@@ -49,7 +49,7 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.axes = self.canvas.figure.subplots()
         self.toolbar = NavigationToolbar2QT(self.canvas, self)
 
-        self.canvas.figure.tight_layout()
+        # self.canvas.figure.tight_layout()
 
         self.matplotlib_layout.addWidget(self.toolbar)
         self.matplotlib_layout.addWidget(self.canvas)
@@ -145,9 +145,9 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.show_output()
 
     def show_output(self) -> None:
-        self.spot_out.setText(f'Spot on the target (mm): {self.model.calc_spot_radius()}')
-        self.detector_out.setText(f'Spot on detector (mm): {self.model.calc_detector_size()}')
-        self.angle_out.setText(f'Minimum angle (degrees): {self.model.calc_minimum_angle()}')
+        self.spot_out.setText(f'Spot on the target (mm): {round(self.model.calc_spot_radius(), 3)}')
+        self.detector_out.setText(f'Spot on detector (mm): {round(self.model.calc_detector_size(), 3)}')
+        self.angle_out.setText(f'Minimum angle (degrees): {round(self.model.calc_minimum_angle(), 3)}')
 
     def clear_output(self) -> None:
         self.spot_out.setText(f'Spot on the target (mm): ')

@@ -14,9 +14,9 @@ def draw_ellipse(axis: Axes, r1: float, r2: float, shift_1: float, shift_2: floa
     if d != 0:
         height = 4 * np.sqrt(s * (s - r1) * (s - r2) * (s - d)) / d
 
-    ang = 0
+    ang = 90
     if shift_1 != 0:
-        ang += (np.arctan(shift_2 / shift_1)) * 180 / np.pi
+        ang = (np.arctan(shift_2 / shift_1)) * 180 / np.pi
 
     axis.add_patch(Rectangle([-3.5, -3.5], 7, 7, color='purple', label='target'))
     axis.add_patch(Ellipse([0, 0], width, height, angle=ang, color='red', label='beam spot'))
@@ -108,7 +108,11 @@ class Geometry:
         if direction not in possible_directions:
             return
         
-        if (direction == 'vertical' and self.view == 'v') or (direction == 'horizonthal' and self.view == 'h'):
+        if direction == 'vertical' and self.view == 'v':
+            self.coordinates[1][object_index * 2] += val
+            self.coordinates[1][object_index * 2 + 1] += val
+
+        if direction == 'horizonthal' and self.view == 'h':
             self.coordinates[1][object_index * 2] -= val
             self.coordinates[1][object_index * 2 + 1] -= val
 
