@@ -11,15 +11,19 @@ def draw_ellipse(axis: Axes, r1: float, r2: float, shift_1: float, shift_2: floa
     width = (r1 + r2 - d)
 
     height = width
-    if d != 0:
+    if not (d > -0.1 or d < 0.1):
         height = 4 * np.sqrt(s * (s - r1) * (s - r2) * (s - d)) / d
 
     ang = 90
-    if shift_1 != 0:
+    if not (shift_1 > -0.1 or shift_1 < 0.1):
         ang = (np.arctan(shift_2 / shift_1)) * 180 / np.pi
 
     axis.add_patch(Rectangle([-3.5, -3.5], 7, 7, color='purple', label='target'))
     axis.add_patch(Ellipse([0, 0], width, height, angle=ang, color='red', label='beam spot'))
+
+
+def calc_clipping_collimator_radius(angle: float, distance: float, radius: float) -> float:
+    pass
 
 
 class Geometry:
@@ -118,9 +122,9 @@ class Geometry:
 
 class Painter:
 
-    DETECTOR_WIDTH = 70
-    ARC_HEIGHT = 20
-    TARGET_HEIGHT = 14
+    ARC_HEIGHT = 20.0
+    TARGET_HEIGHT = 14.0
+    DETECTOR_WIDTH = 70.0
     COLLIMATOR_HEIGHT = 20.0
     
     def __init__(self, axes: Axes, model: Geometry) -> None:
@@ -154,7 +158,12 @@ class Painter:
 
         self.__add_arc() # detector angles
         self.__add_detector(dots[0][-1] + 10, 3.0) # detector
-        self.axes.plot([dots[0][4], dots[0][5]], [-self.TARGET_HEIGHT / 2, self.TARGET_HEIGHT / 2], color='purple', label='target') # target
+        # target
+        self.axes.plot(
+            [dots[0][4], dots[0][5]], 
+            [-self.TARGET_HEIGHT / 2, self.TARGET_HEIGHT / 2], 
+            color='purple', label='target'
+        )
 
         self.axes.plot([0, dots[0][-1]], [0, 0], '--', color='red', label='beam line')
 
@@ -188,9 +197,11 @@ class Painter:
         for i in range(num):
             xs = np.linspace(first_border[0] + first_step * i, second_border[0] + first_step * i, 3)
             ys = coeffs[0] * xs + (coeffs[1] - first_step * i * coeffs[0])
-            self.axes.plot(xs, ys, color='green')
+            
             if legend != '':
                 self.axes.plot(xs, ys, color='green', label=legend)
+            else:
+                self.axes.plot(xs, ys, color='green')
 
         second_step = self.model.t2 * 10 / num
         for i in range(num):

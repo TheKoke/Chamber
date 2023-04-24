@@ -43,13 +43,14 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
 
+        self.setMinimumSize(1300, 900)
+        self.size_grip = QSizeGrip(self)
+
         self._is_vertical_view = True
 
         self.canvas = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
         self.axes = self.canvas.figure.subplots()
         self.toolbar = NavigationToolbar2QT(self.canvas, self)
-
-        # self.canvas.figure.tight_layout()
 
         self.matplotlib_layout.addWidget(self.toolbar)
         self.matplotlib_layout.addWidget(self.canvas)
@@ -83,6 +84,8 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.reflections_button.clicked.connect(self.draw_reflections)
         self.view_button.clicked.connect(self.change_view)
         self.spot_button.clicked.connect(self.look_at_spot)
+
+        self.show()
 
     def __new_model(self) -> None:
         d1, d2, d3 = self.d1_spinbox.value(), self.d2_spinbox.value(), self.d3_spinbox.value()
@@ -148,6 +151,7 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.spot_out.setText(f'Spot on the target (mm): {round(self.model.calc_spot_radius(), 3)}')
         self.detector_out.setText(f'Spot on detector (mm): {round(self.model.calc_detector_size(), 3)}')
         self.angle_out.setText(f'Minimum angle (degrees): {round(self.model.calc_minimum_angle(), 3)}')
+        self.cutting_out.setText(f'utting collim. radius (mm):')
 
     def clear_output(self) -> None:
         self.spot_out.setText(f'Spot on the target (mm): ')
@@ -168,6 +172,5 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     w = GeomWindow()
-    w.show()
 
     app.exec()
