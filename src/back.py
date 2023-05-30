@@ -4,19 +4,19 @@ from matplotlib.axes import Axes
 from matplotlib.patches import Rectangle, Ellipse
 
 
-def draw_ellipse(axis: Axes, r1: float, r2: float, shift_1: float, shift_2: float) -> None:
-    d = np.sqrt(shift_1 ** 2 + shift_2 ** 2)
+def draw_ellipse(axis: Axes, r1: float, r2: float, shift_x: float, shift_y: float) -> None:
+    d = np.sqrt(shift_x ** 2 + shift_y ** 2)
 
     s = (r1 + r2 + d) / 2
     width = (r1 + r2 - d)
 
     height = width
-    if not (d > -0.1 or d < 0.1):
+    if not abs(d - 0.1) < 0:
         height = 4 * np.sqrt(s * (s - r1) * (s - r2) * (s - d)) / d
 
     ang = 90
-    if not (shift_1 > -0.1 or shift_1 < 0.1):
-        ang = (np.arctan(shift_2 / shift_1)) * 180 / np.pi
+    if not abs(shift_x - 0.1) < 0:
+        ang = (np.arctan(shift_y / shift_x)) * 180 / np.pi
 
     axis.add_patch(Rectangle([-7.5, -7.5], 15, 15, color='purple', label='target'))
     axis.add_patch(Ellipse([0, 0], width, height, angle=ang, color='red', label='beam spot'))

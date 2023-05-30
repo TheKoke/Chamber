@@ -88,12 +88,33 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.show()
 
     def __new_model(self) -> None:
+        self.__check_params()
+
         d1, d2, d3 = self.d1_spinbox.value(), self.d2_spinbox.value(), self.d3_spinbox.value()
         h1, h2 = self.r1_spinbox.value(), self.r2_spinbox.value()
         t1, t2 = self.t1_spinbox.value(), self.t2_spinbox.value()
 
         self.model = Geometry(h1, h2, d1, d2, d3, t1, t2, 'v' if self._is_vertical_view else 'h')
         self.painter = Painter(self.axes, self.model)
+
+    def __check_params(self) -> None:
+        #                  d1   d2   d3   h1   h2   t1   t2
+        default_params = [960, 360, 220, 3.0, 3.0, 2.0, 2.0]
+
+        current_params = [
+            self.d1_spinbox.value(), self.d2_spinbox.value(), self.d3_spinbox.value(),
+            self.r1_spinbox.value(), self.r2_spinbox.value(),
+            self.t1_spinbox.value(), self.t2_spinbox.value()
+        ]
+
+        matched_spinboxes = [
+            self.d1_spinbox, self.d2_spinbox, self.d3_spinbox, self.r1_spinbox, self.r2_spinbox,
+            self.t1_spinbox, self.t2_spinbox
+        ]
+
+        for i in range(len(current_params)):
+            if current_params[i] == 0:
+                matched_spinboxes[i].setValue(default_params[i])
 
     def look_at_spot(self) -> None:
         v1, v2 = self.v_spinbox_1.value(), self.v_spinbox_2.value()
