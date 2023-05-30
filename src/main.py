@@ -32,8 +32,8 @@ class SpotWindow(QWidget):
     def start(self) -> None:
         draw_ellipse(self.axes, self.r1, self.r2, self.shift_x, self.shift_y)
 
-        self.axes.set_ylim(-7, 7)
-        self.axes.set_xlim((-7, 7))
+        self.axes.set_ylim(-20, 20)
+        self.axes.set_xlim((-20, 20))
         self.axes.set_aspect('equal')
         self.axes.legend()
 

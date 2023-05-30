@@ -18,7 +18,7 @@ def draw_ellipse(axis: Axes, r1: float, r2: float, shift_1: float, shift_2: floa
     if not (shift_1 > -0.1 or shift_1 < 0.1):
         ang = (np.arctan(shift_2 / shift_1)) * 180 / np.pi
 
-    axis.add_patch(Rectangle([-3.5, -3.5], 7, 7, color='purple', label='target'))
+    axis.add_patch(Rectangle([-7.5, -7.5], 15, 15, color='purple', label='target'))
     axis.add_patch(Ellipse([0, 0], width, height, angle=ang, color='red', label='beam spot'))
 
 
@@ -123,8 +123,8 @@ class Geometry:
 class Painter:
 
     ARC_HEIGHT = 20.0
-    TARGET_HEIGHT = 14.0
     DETECTOR_WIDTH = 70.0
+    DETECTOR_HEIGHT = 3.0
     COLLIMATOR_HEIGHT = 20.0
     
     def __init__(self, axes: Axes, model: Geometry) -> None:
@@ -144,26 +144,26 @@ class Painter:
         # collimators
         self.__add_collimator(
             (dots[0][0], dots[1][0] - (self.COLLIMATOR_HEIGHT - self.model.h1) / 2), 
-            self.model.t1 * 10, 
-            self.model.h1, 
+            self.model.t1 * 10,
+            self.model.h1,
             self.COLLIMATOR_HEIGHT
         )
 
         self.__add_collimator(
             (dots[0][2], dots[1][2] - (self.COLLIMATOR_HEIGHT - self.model.h2) / 2), 
-            self.model.t2 * 10, 
-            self.model.h2, 
+            self.model.t2 * 10,
+            self.model.h2,
             self.COLLIMATOR_HEIGHT
         )
 
-        self.__add_arc() # detector angles
-        self.__add_detector(dots[0][-1] + 10, 3.0) # detector
-        # target
+        self.__add_arc((2.5 * dots[1][6], 2.5 * dots[1][7])) # detector angles
+        self.__add_detector(dots[0][-1] + 10, self.DETECTOR_HEIGHT) # detector
+        
         self.axes.plot(
             [dots[0][4], dots[0][5]], 
-            [-self.TARGET_HEIGHT / 2, self.TARGET_HEIGHT / 2], 
+            [dots[1][4] + dots[1][4] * 0.2, dots[1][5] + dots[1][5] * 0.2], 
             color='purple', label='target'
-        )
+        ) # target
 
         self.axes.plot([0, dots[0][-1]], [0, 0], '--', color='red', label='beam line')
 
@@ -183,12 +183,22 @@ class Painter:
         self.reflections_lines((dots[0][0], dots[1][0]), (dots[0][3], dots[1][3]))
         self.reflections_lines((dots[0][1], dots[1][1]), (dots[0][2], dots[1][2]))
 
-        self.reflections_lines((dots[0][0] + self.model.t1 * 10, dots[1][0]), (dots[0][3], dots[1][3]), num=1, legend='reflections')
-        self.reflections_lines((dots[0][1] + self.model.t1 * 10, dots[1][1]), (dots[0][2], dots[1][2]), num=1)
+        self.reflections_lines(
+            (dots[0][0] + self.model.t1 * 10, dots[1][0]), 
+            (dots[0][3], dots[1][3]), num=1)
+        
+        self.reflections_lines(
+            (dots[0][1] + self.model.t1 * 10, dots[1][1]), 
+            (dots[0][2], dots[1][2]), num=1)
 
         self.axes.legend()
 
-    def reflections_lines(self, first_border: tuple[float, float], second_border: tuple[float, float], num: int = 10, legend: str = '') -> None:
+    def reflections_lines(self, first_border: tuple[float, float], second_border: tuple[float, float], num: int = 10) -> None:
+        self.__first_reflections(first_border, second_border, num)
+        self.__second_reflections(first_border, second_border, num)
+        
+
+    def __first_reflections(self, first_border: tuple[float, float], second_border: tuple[float, float], num: int = 10) -> None:
         systematrix = np.array([[first_border[0], 1], [second_border[0], 1]])
         righthand = np.array([first_border[1], second_border[1]])
         coeffs = np.linalg.solve(systematrix, righthand)
@@ -197,11 +207,12 @@ class Painter:
         for i in range(num):
             xs = np.linspace(first_border[0] + first_step * i, second_border[0] + first_step * i, 3)
             ys = coeffs[0] * xs + (coeffs[1] - first_step * i * coeffs[0])
-            
-            if legend != '':
-                self.axes.plot(xs, ys, color='green', label=legend)
-            else:
-                self.axes.plot(xs, ys, color='green')
+            self.axes.plot(xs, ys, color='green')
+
+    def __second_reflections(self, first_border: tuple[float, float], second_border: tuple[float, float], num: int = 10) -> None:
+        systematrix = np.array([[first_border[0], 1], [second_border[0], 1]])
+        righthand = np.array([first_border[1], second_border[1]])
+        coeffs = np.linalg.solve(systematrix, righthand)
 
         second_step = self.model.t2 * 10 / num
         for i in range(num):
@@ -229,8 +240,8 @@ class Painter:
 
         self.axes.legend()
 
-    def __add_arc(self) -> None:
-        ys = np.linspace(-self.ARC_HEIGHT / 2, self.ARC_HEIGHT / 2, 20)
+    def __add_arc(self, bounds: tuple[float, float]) -> None:
+        ys = np.linspace(bounds[0], bounds[1], 20)
         xs = np.sqrt(self.model.d3 ** 2 - ys ** 2) + (self.model.d1 + self.model.d2)
 
         mm_per_degree = (2 * np.pi * self.model.d3) / 360
@@ -253,7 +264,7 @@ class Painter:
 if __name__ == '__main__':
     fig, ax = plt.subplots()
 
-    g = Geometry(3, 3, 960, 360, 220, view='v')
+    g = Geometry(6, 6, 340, 250, 235, view='v')
     p = Painter(ax, g)
 
     g.shift_dots(0, 'up', -2.0)
