@@ -5,21 +5,41 @@ from matplotlib.patches import Rectangle, Ellipse
 
 
 def draw_ellipse(axis: Axes, r1: float, r2: float, shift_x: float, shift_y: float) -> None:
+    height, width = ellipse_semi_axes(r1, r2, shift_x, shift_y)
+    ang = tilted_angle(shift_x, shift_y)
+
+    rectangle_height = 2.5 * max(height, width)
+    axis.add_patch(Rectangle(
+        [-rectangle_height / 2, -rectangle_height / 2], 
+        rectangle_height, 
+        rectangle_height, 
+        color='purple', label='target'))
+    
+    axis.add_patch(Ellipse(
+        [0, 0], 
+        width, 
+        height, 
+        angle=ang, 
+        color='red', label='beam spot'))
+
+
+def tilted_angle(shift_x: float, shift_y: float) -> None:
+    if abs(shift_x) < 0.1:
+        return 90
+    return 90 - np.arctan(shift_y / shift_x) * np.pi / 180
+
+
+def ellipse_semi_axes(r1: float, r2: float, shift_x: float, shift_y: float) -> tuple[float, float]:
     d = np.sqrt(shift_x ** 2 + shift_y ** 2)
-
     s = (r1 + r2 + d) / 2
-    width = (r1 + r2 - d)
 
+    width = (r1 + r2 - d)
     height = width
-    if not abs(d - 0.1) < 0:
+
+    if abs(d) >= 0.1:
         height = 4 * np.sqrt(s * (s - r1) * (s - r2) * (s - d)) / d
 
-    ang = 90
-    if not abs(shift_x - 0.1) < 0:
-        ang = (np.arctan(shift_y / shift_x)) * 180 / np.pi
-
-    axis.add_patch(Rectangle([-7.5, -7.5], 15, 15, color='purple', label='target'))
-    axis.add_patch(Ellipse([0, 0], width, height, angle=ang, color='red', label='beam spot'))
+    return (height, width)
 
 
 def calc_clipping_collimator_radius(angle: float, distance: float, radius: float) -> float:

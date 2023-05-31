@@ -172,12 +172,13 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.spot_out.setText(f'Spot on the target (mm): {round(self.model.calc_spot_radius(), 3)}')
         self.detector_out.setText(f'Spot on detector (mm): {round(self.model.calc_detector_size(), 3)}')
         self.angle_out.setText(f'Minimum angle (degrees): {round(self.model.calc_minimum_angle(), 3)}')
-        self.cutting_out.setText(f'utting collim. radius (mm):')
+        self.cutting_out.setText(f'Cutting collim. radius (mm):')
 
     def clear_output(self) -> None:
         self.spot_out.setText(f'Spot on the target (mm): ')
         self.detector_out.setText(f'Spot on detector (mm): ')
         self.angle_out.setText(f'Minimum angle (degrees): ')
+        self.cutting_out.setText(f'Cutting collim. radius (mm):')
 
     def change_view(self) -> None:
         self._is_vertical_view = not self._is_vertical_view
