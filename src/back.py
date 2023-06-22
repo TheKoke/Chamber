@@ -13,20 +13,22 @@ def draw_ellipse(axis: Axes, r1: float, r2: float, shift_x: float, shift_y: floa
         [-rectangle_height / 2, -rectangle_height / 2], 
         rectangle_height, 
         rectangle_height, 
-        color='purple', label='target'))
+        color='purple', label='target')
+    )
     
     axis.add_patch(Ellipse(
         [0, 0], 
         width, 
         height, 
         angle=ang, 
-        color='red', label='beam spot'))
+        color='red', label='beam spot')
+    )
 
 
-def tilted_angle(shift_x: float, shift_y: float) -> None:
+def tilted_angle(shift_x: float, shift_y: float) -> float:
     if abs(shift_x) < 0.1:
         return 90
-    return 90 - np.arctan(shift_y / shift_x) * np.pi / 180
+    return 90 - np.arctan(shift_y / shift_x) * 180 / np.pi
 
 
 def ellipse_semi_axes(r1: float, r2: float, shift_x: float, shift_y: float) -> tuple[float, float]:

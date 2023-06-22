@@ -48,36 +48,36 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
 
         self._is_vertical_view = True
 
-        self.canvas = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
+        self.canvas = FigureCanvasQTAgg(Figure(figsize=(20, 17)))
         self.axes = self.canvas.figure.subplots()
         self.toolbar = NavigationToolbar2QT(self.canvas, self)
 
-        self.matplotlib_layout.addWidget(self.toolbar)
-        self.matplotlib_layout.addWidget(self.canvas)
+        mask = QVBoxLayout(self.matplotlib_layout)
 
-        self.output.setStyleSheet("background-color: white;")
+        mask.addWidget(self.toolbar)
+        mask.addWidget(self.canvas)
 
-        d1, d2, d3 = self.d1_spinbox.value(), self.d2_spinbox.value(), self.d3_spinbox.value()
-        h1, h2 = self.r1_spinbox.value(), self.r2_spinbox.value()
-        t1, t2 = self.t1_spinbox.value(), self.t2_spinbox.value()
+        d1, d2, d3 = self.d1_box.value(), self.d2_box.value(), self.d3_box.value()
+        h1, h2 = self.r1_box.value(), self.r2_box.value()
+        t1, t2 = self.t1_box.value(), self.t2_box.value()
 
         self.model = Geometry(h1, h2, d1, d2, d3, t1, t2, 'v' if self._is_vertical_view else 'h')
         self.painter = Painter(self.axes, self.model)
 
         # general properties
-        self.d1_spinbox.valueChanged.connect(self.prop_change)
-        self.d2_spinbox.valueChanged.connect(self.prop_change)
-        self.d3_spinbox.valueChanged.connect(self.prop_change)
-        self.r1_spinbox.valueChanged.connect(self.prop_change)
-        self.r2_spinbox.valueChanged.connect(self.prop_change)
-        self.t1_spinbox.valueChanged.connect(self.prop_change)
-        self.t2_spinbox.valueChanged.connect(self.prop_change)
+        self.d1_box.valueChanged.connect(self.prop_change)
+        self.d2_box.valueChanged.connect(self.prop_change)
+        self.d3_box.valueChanged.connect(self.prop_change)
+        self.r1_box.valueChanged.connect(self.prop_change)
+        self.r2_box.valueChanged.connect(self.prop_change)
+        self.t1_box.valueChanged.connect(self.prop_change)
+        self.t2_box.valueChanged.connect(self.prop_change)
 
         # tilting properties
-        self.v_spinbox_1.valueChanged.connect(self.tilt_change)
-        self.v_spinbox_2.valueChanged.connect(self.tilt_change)
-        self.h_spinbox_1.valueChanged.connect(self.tilt_change)
-        self.h_spinbox_2.valueChanged.connect(self.tilt_change)
+        self.v_1.valueChanged.connect(self.tilt_change)
+        self.v_2.valueChanged.connect(self.tilt_change)
+        self.h_1.valueChanged.connect(self.tilt_change)
+        self.h_2.valueChanged.connect(self.tilt_change)
 
         # general buttons
         self.optics_button.clicked.connect(self.draw_optics)
@@ -90,9 +90,9 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
     def __new_model(self) -> None:
         self.__check_params()
 
-        d1, d2, d3 = self.d1_spinbox.value(), self.d2_spinbox.value(), self.d3_spinbox.value()
-        h1, h2 = self.r1_spinbox.value(), self.r2_spinbox.value()
-        t1, t2 = self.t1_spinbox.value(), self.t2_spinbox.value()
+        d1, d2, d3 = self.d1_box.value(), self.d2_box.value(), self.d3_box.value()
+        h1, h2 = self.r1_box.value(), self.r2_box.value()
+        t1, t2 = self.t1_box.value(), self.t2_box.value()
 
         self.model = Geometry(h1, h2, d1, d2, d3, t1, t2, 'v' if self._is_vertical_view else 'h')
         self.painter = Painter(self.axes, self.model)
@@ -102,14 +102,14 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         default_params = [960, 360, 220, 3.0, 3.0, 2.0, 2.0]
 
         current_params = [
-            self.d1_spinbox.value(), self.d2_spinbox.value(), self.d3_spinbox.value(),
-            self.r1_spinbox.value(), self.r2_spinbox.value(),
-            self.t1_spinbox.value(), self.t2_spinbox.value()
+            self.d1_box.value(), self.d2_box.value(), self.d3_box.value(),
+            self.r1_box.value(), self.r2_box.value(),
+            self.t1_box.value(), self.t2_box.value()
         ]
 
         matched_spinboxes = [
-            self.d1_spinbox, self.d2_spinbox, self.d3_spinbox, self.r1_spinbox, self.r2_spinbox,
-            self.t1_spinbox, self.t2_spinbox
+            self.d1_box, self.d2_box, self.d3_box, self.r1_box, self.r2_box,
+            self.t1_box, self.t2_box
         ]
 
         for i in range(len(current_params)):
@@ -117,13 +117,13 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
                 matched_spinboxes[i].setValue(default_params[i])
 
     def look_at_spot(self) -> None:
-        v1, v2 = self.v_spinbox_1.value(), self.v_spinbox_2.value()
-        h1, h2 = self.h_spinbox_1.value(), self.h_spinbox_2.value()
+        v1, v2 = self.v_1.value(), self.v_2.value()
+        h1, h2 = self.h_1.value(), self.h_2.value()
 
         x_shift = h2 - h1
         y_shift = v2 - v1
 
-        self.window = SpotWindow(self.r1_spinbox.value(), self.r2_spinbox.value(), x_shift, y_shift)
+        self.window = SpotWindow(self.r1_box.value(), self.r2_box.value(), x_shift, y_shift)
         self.window.show()
 
     def prop_change(self) -> None:
@@ -144,8 +144,8 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
         self.do_shifts()
         
     def do_shifts(self) -> None:
-        v1, v2 = self.v_spinbox_1.value(), self.v_spinbox_2.value()
-        h1, h2 = self.h_spinbox_1.value(), self.h_spinbox_2.value()
+        v1, v2 = self.v_1.value(), self.v_2.value()
+        h1, h2 = self.h_1.value(), self.h_2.value()
 
         self.__new_model()
 
@@ -192,7 +192,5 @@ class GeomWindow(QMainWindow, Ui_MainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
     w = GeomWindow()
-
     app.exec()
