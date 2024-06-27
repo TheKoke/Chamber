@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.patches import Rectangle, Ellipse
 
@@ -240,6 +239,8 @@ class Painter:
 
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+
     fig, ax = plt.subplots()
 
     g = Geometry(3, 3, 960, 360, 220, view='v')
