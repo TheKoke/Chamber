@@ -1,10 +1,10 @@
 from geometry import Geometry
 
 from matplotlib.axes import Axes
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Ellipse
 
 
-class Painter:
+class SpotModel:
     def __init__(self, axis: Axes, model: Geometry) -> None:
         self.axis = axis
         self.model = model

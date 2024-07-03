@@ -9,7 +9,11 @@ class Geometry:
         self.target = trgt
         self.detector = det
 
+        self.distances = self.build_distances()
         self.dots = self.build_coordinates()
+
+    def build_distances(self) -> None:
+        pass
 
     def build_coordinates(self) -> None:
         pass
