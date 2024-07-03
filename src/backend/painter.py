@@ -9,7 +9,7 @@ class Painter:
         self.axis = axis
         self.model = model
 
-    def draw() -> None:
+    def draw(self) -> None:
         pass
 
 
