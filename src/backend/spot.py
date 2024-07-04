@@ -16,8 +16,8 @@ class SpotModel:
         ang = self.calculate_angle()
         target = self.model.target
 
-        self.axis.add_patch(Rectangle((target.width / 2, target.height / 2), target.width, target.height))
-        self.axis.add_patch(Ellipse((0, 0), w, h, angle=ang))
+        self.axis.add_patch(Rectangle((target.width / 2, target.height / 2), target.width, target.height, label='Target'))
+        self.axis.add_patch(Ellipse((0, 0), w, h, angle=ang, label='After beam spot'))
 
     def calculate_angle(self) -> float:
         y1 = self.model.first_collimator.y_position
