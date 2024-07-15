@@ -4,7 +4,7 @@
 
 **Chamber** — Desktop application for represent and calculate the model of how the beam of particles scatters in the scattering chamber.
 
-First release is stable and you can get in on **[here](https://github.com/TheKoke/Chamber/blob)**.
+First release is stable and you can get in on **[here](https://github.com/TheKoke/Chamber/releases/tag/v1.0)**.
 
 At that time I'm [(**TheKoke**)](https://github.com/TheKoke) refactoring all repository, and soon I release the second version of this program.
 
