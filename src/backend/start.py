@@ -16,11 +16,11 @@ def starting_position() -> Geometry:
         geometry of LLENR scattering chamber.
     '''
     first_collimator = Collimator(3.0, 2.0)
-    second_collimator = Collimator(3.0, 2.0, 960)
+    second_collimator = Collimator(3.0, 2.0, 960.0)
 
-    target = Target(70.0, 70.0, 1320)
+    target = Target(15.0, 15.0, 1320.0)
 
-    detector = Detector(1540, 0.0, 0.0)
+    detector = Detector(1540.0, 0.0, 0.0)
 
     geometry = Geometry(first_collimator, second_collimator, target, detector)
     return geometry

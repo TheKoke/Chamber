@@ -36,6 +36,10 @@ class Collimator(Environment):
     def thickness(self) -> float:
         return self._t
     
+    @property
+    def height(self) -> float:
+        return 6 * self._r
+    
 
 class Target(Environment):
     def __init__(self, width: float, height: float, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
