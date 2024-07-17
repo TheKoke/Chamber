@@ -36,12 +36,22 @@ class Geometry:
         crossing_h = self.distances[1] - h1 * self.distances[1] / (h1 + h2)
 
         h3 = h2 * (crossing_h + self.distances[2] - t1) / crossing_h
-        h4 = h2 * (crossing_h + self.distances[2] + self.distances[3] - t2) / crossing_h
+        h4 = h2 * (crossing_h + self.distances[2] + self.distances[3] + t2) / crossing_h
 
         return [h1, h2, h3, h4]
     
     def build_widths(self) -> list[float]:
-        pass
+        w1 = self.first_collimator.radius
+        w2 = self.last_collimator.radius
+        t1 = self.first_collimator.thickness
+        t2 = self.last_collimator.thickness
+
+        crossing_w = self.distances[1] - w1 * self.distances[1] / (w1 + w2)
+
+        w3 = w2 * (crossing_w + self.distances[2] - t1) / crossing_w
+        w4 = w2 * (crossing_w + self.distances[2] + self.distances[3] + t2) / crossing_w
+
+        return [w1, w2, w3, w4]
 
     def build_coordinates(self) -> tuple[list[float], list[float], list[float]]:
         dots = ([], [], [])
@@ -60,16 +70,28 @@ class Geometry:
         return dots
     
     def refresh(self) -> None:
-        pass
+        self.distances = self.build_distances()
+        self.heights = self.build_heights()
+        self.widths = self.build_widths()
+        self.coordinates = self.build_coordinates()
 
     def xy_plane(self) -> tuple[list[float], list[float]]:
         return (self.coordinates[0], self.coordinates[1])
+    
+    def xy_reflections(self) -> list[numpy.ndarray]:
+        pass
 
     def xz_plane(self) -> tuple[list[float], list[float]]:
         return (self.coordinates[0], self.coordinates[2])
+    
+    def xz_reflections(self) -> list[numpy.ndarray]:
+        pass
 
     def yz_plane(self) -> tuple[list[float], list[float]]:
         return (self.coordinates[1], self.coordinates[2])
+
+    def yz_reflections(self) -> list[numpy.ndarray]:
+        pass
 
 
 if __name__ == '__main__':
