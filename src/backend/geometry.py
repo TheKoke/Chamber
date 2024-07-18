@@ -78,20 +78,135 @@ class Geometry:
     def xy_plane(self) -> tuple[list[float], list[float]]:
         return (self.coordinates[0], self.coordinates[1])
     
-    def xy_reflections(self) -> list[numpy.ndarray]:
-        pass
+    def xy_reflections(self) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
+        lines = 10
+
+        c1 = self.first_collimator
+        c2 = self.last_collimator
+
+        starting_x = c1.x_position + c1.thickness * 10
+
+        starting_ceil_y = c1.y_position + c1.radius / 2
+        starting_floor_y = c1.y_position - c1.radius / 2
+
+        reflecting_xs = numpy.linspace(c2.x_position, c2.x_position + c2.thickness * 10, lines)
+
+        reflecting_floor_ys = (c2.y_position - c2.radius / 2) * numpy.ones_like(reflecting_xs)
+        reflecting_ceil_ys = (c2.y_position + c2.radius / 2) * numpy.ones_like(reflecting_xs)
+
+        stopping_x = self.detector.x_position
+
+        reflections = []
+        for i in range(lines):
+            reflections.extend(self.__reflections_by(
+                (starting_x, starting_ceil_y[i]),
+                (reflecting_xs[i], reflecting_floor_ys[i]),
+                stopping_x
+            ))
+
+        for i in range(lines):
+            reflections.extend(self.__reflections_by(
+                (starting_x, starting_floor_y[i]),
+                (reflecting_xs[i], reflecting_ceil_ys[i]),
+                stopping_x
+            ))
+
+        return reflections
 
     def xz_plane(self) -> tuple[list[float], list[float]]:
         return (self.coordinates[0], self.coordinates[2])
     
-    def xz_reflections(self) -> list[numpy.ndarray]:
-        pass
+    def xz_reflections(self) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
+        lines = 10
+
+        c1 = self.first_collimator
+        c2 = self.last_collimator
+
+        starting_x = c1.x_position + c1.thickness * 10
+
+        starting_ceil_z = c1.z_position + c1.radius / 2
+        starting_floor_z = c1.z_position - c1.radius / 2
+
+        reflecting_xs = numpy.linspace(c2.x_position, c2.x_position + c2.thickness * 10, lines)
+
+        reflecting_floor_zs = (c2.z_position - c2.radius / 2) * numpy.ones_like(reflecting_xs)
+        reflecting_ceil_zs = (c2.z_position + c2.radius / 2) * numpy.ones_like(reflecting_xs)
+
+        stopping_x = self.detector.x_position
+
+        reflections = []
+        for i in range(lines):
+            reflections.extend(self.__reflections_by(
+                (starting_x, starting_ceil_z[i]),
+                (reflecting_xs[i], reflecting_floor_zs[i]),
+                stopping_x
+            ))
+
+        for i in range(lines):
+            reflections.extend(self.__reflections_by(
+                (starting_x, starting_floor_z[i]),
+                (reflecting_xs[i], reflecting_ceil_zs[i]),
+                stopping_x
+            ))
+
+        return reflections
 
     def yz_plane(self) -> tuple[list[float], list[float]]:
         return (self.coordinates[1], self.coordinates[2])
 
-    def yz_reflections(self) -> list[numpy.ndarray]:
-        pass
+    def yz_reflections(self) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
+        lines = 10
+
+        c1 = self.first_collimator
+        c2 = self.last_collimator
+
+        starting_y = c1.y_position + c1.thickness * 10
+
+        starting_ceil_z = c1.z_position + c1.radius / 2
+        starting_floor_z = c1.z_position - c1.radius / 2
+
+        reflecting_ys = numpy.linspace(c2.y_position, c2.y_position + c2.thickness * 10, lines)
+
+        reflecting_floor_zs = (c2.z_position - c2.radius / 2) * numpy.ones_like(reflecting_ys)
+        reflecting_ceil_zs = (c2.z_position + c2.radius / 2) * numpy.ones_like(reflecting_ys)
+
+        stopping_y = self.detector.y_position
+
+        reflections = []
+        for i in range(lines):
+            reflections.extend(self.__reflections_by(
+                (starting_y, starting_ceil_z[i]),
+                (reflecting_ys[i], reflecting_floor_zs[i]),
+                stopping_y
+            ))
+
+        for i in range(lines):
+            reflections.extend(self.__reflections_by(
+                (starting_y, starting_floor_z[i]),
+                (reflecting_ys[i], reflecting_ceil_zs[i]),
+                stopping_y
+            ))
+
+        return reflections
+
+    def __reflections_by(self, 
+                         start: tuple[float, float], 
+                         reflect: tuple[float, float], 
+                         stop_x: float) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
+        start_x, start_y = start
+        reflect_x, reflect_y = reflect
+
+        systematrix = numpy.array([[start_x, 1], [reflect_x, 1]])
+        right_hand = numpy.array([start_y, reflect_y])
+        coeffs = numpy.linalg.solve(systematrix, right_hand)
+
+        ingoing_xs = numpy.array([start_x, reflect_x])
+        outgoing_xs = numpy.array([reflect_x, stop_x])
+
+        ingoing_ys = coeffs[0] * ingoing_xs + coeffs[1]
+        outgoing_ys = -coeffs[0] * outgoing_xs - coeffs[1]
+
+        return [(ingoing_xs, ingoing_ys), (outgoing_xs, outgoing_ys)]
 
 
 if __name__ == '__main__':

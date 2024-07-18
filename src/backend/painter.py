@@ -1,7 +1,10 @@
-from geometry import Geometry
+from backend.geometry import Geometry
 
 from matplotlib.axes import Axes
 from matplotlib.patches import Rectangle, Arc
+
+
+SCOPING = 10
 
 
 class Painter:
@@ -9,28 +12,31 @@ class Painter:
         self.axis = axis
         self.model = model
 
+        self.current_plane = None
         self.is_optics_enable = True
         self.is_reflections_enable = False
 
     def draw(self, plane: str) -> None:
-        if plane.lower() not in ['xy', 'xz', 'yz']:
+        if plane.lower() not in ['xy', 'xz', 'yz'] or plane is None:
             plane = 'xy'
+
+        self.current_plane = plane
 
         self.axis.clear()
 
-        self.draw_environment(plane)
+        self.draw_environment()
 
         xmin, xmax = self.axis.get_xlim()
         self.axis.plot([xmin, xmax], [0, 0], '--', color='red', label='beam line')
 
         if self.is_optics_enable:
-            self.draw_optics(plane)
+            self.draw_optics()
 
         if self.is_reflections_enable:
-            self.draw_reflections(plane)
+            self.draw_reflections()
 
-    def draw_environment(self, plane: str) -> None:
-        if plane == 'xy':
+    def draw_environment(self) -> None:
+        if self.current_plane == 'xy':
             # first collimator
             c1 = self.model.first_collimator
             self.__add_collimator(c1.x_position, c1.y_position, c1.radius, c1.thickness, c1.height)
@@ -47,7 +53,7 @@ class Painter:
             d = self.model.detector
             self.__add_detector(d.x_position, d.y_position)
 
-        if plane == 'xz':
+        if self.current_plane == 'xz':
             # first collimator
             c1 = self.model.first_collimator
             self.__add_collimator(c1.x_position, c1.z_position, c1.radius, c1.thickness, c1.height)
@@ -64,7 +70,7 @@ class Painter:
             d = self.model.detector
             self.__add_detector(d.x_position, d.z_position)
 
-        if plane == 'yz':
+        if self.current_plane == 'yz':
             # first collimator
             c1 = self.model.first_collimator
             self.__add_collimator(c1.y_position, c1.z_position, c1.radius, c1.thickness, c1.height)
@@ -83,11 +89,11 @@ class Painter:
 
     def __add_collimator(self, axis_x: float, axis_y: float, radius: float, thickness: float, height: float) -> None:
         self.axis.add_patch(Rectangle(
-            (axis_x, axis_y + radius / 2), thickness * 10, height / 2 - radius, color='black', label='collimator'
+            (axis_x, axis_y + radius / 2), thickness * SCOPING, height / 2 - radius, color='black', label='collimator'
         ))
 
         self.axis.add_patch(Rectangle(
-            (axis_x, axis_y - height / 2 + radius / 2), thickness * 10, height / 2 - radius, color='black'
+            (axis_x, axis_y - height / 2 + radius / 2), thickness * SCOPING, height / 2 - radius, color='black'
         ))
 
     def __add_target(self, axis_x: float, axis_y: float, height: float) -> None:
@@ -96,21 +102,25 @@ class Painter:
     def __add_detector(self, axis_x: float, axis_y: float) -> None:
         DETECTOR_WIDTH = 12.0
         self.axis.add_patch(Rectangle(
-            (axis_x, axis_y - DETECTOR_WIDTH / 20), DETECTOR_WIDTH * 10, DETECTOR_WIDTH / 10, color='blue', label='detector'
+            (axis_x, axis_y - DETECTOR_WIDTH / (2 * SCOPING)), 
+            DETECTOR_WIDTH * SCOPING, 
+            DETECTOR_WIDTH / SCOPING, 
+            color='blue', 
+            label='detector'
         ))
         
         x0, y0 = self.model.target.x_position, self.model.target.y_position
         radii = self.model.detector.x_position - self.model.target.x_position
         self.axis.add_patch(Arc((x0, y0), 2 * radii, 2 * radii, theta1=-10, theta2=10, linestyle='-.'))
 
-    def draw_optics(self, plane: str) -> None:
-        if plane == 'xy':
+    def draw_optics(self) -> None:
+        if self.current_plane == 'xy':
             coordinates = self.model.xy_plane()
 
-        if plane == 'xz':
+        if self.current_plane == 'xz':
             coordinates = self.model.xz_plane()
 
-        if plane == 'yz':
+        if self.current_plane == 'yz':
             coordinates = self.model.yz_plane()
 
         self.axis.scatter(coordinates[0], coordinates[1], color='black')
@@ -118,38 +128,30 @@ class Painter:
         self.axis.plot([coordinates[0][0], coordinates[0][-1]], [coordinates[1][0], coordinates[1][-1]], color='red', label='optic scatter')
         self.axis.plot([coordinates[0][1], coordinates[0][-2]], [coordinates[1][1], coordinates[1][-2]], color='red')
 
-    def draw_reflections(self, plane: str) -> None:
-        if plane == 'xy':
+    def draw_reflections(self) -> None:
+        if self.current_plane == 'xy':
             reflections = self.model.xy_reflections()
 
-        if plane == 'xz':
+        if self.current_plane == 'xz':
             reflections = self.model.xz_reflections()
 
-        if plane == 'yz':
+        if self.current_plane == 'yz':
             reflections = self.model.yz_reflections()
+
+        for refl in reflections[:-1]:
+            xs, ys = refl
+            self.axis.plot(xs, ys, color='green')
+
+        self.axis.plot(reflections[-1][0], reflections[-1][1], color='green', label='reflections')
 
     def switch_enable_optics(self) -> None:
         self.is_optics_enable = not self.is_optics_enable
-        self.draw()
+        self.draw(self.current_plane)
 
     def switch_enable_reflections(self) -> None:
         self.is_reflections_enable = not self.is_reflections_enable
-        self.draw()
+        self.draw(self.current_plane)
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    from start import starting_position
-    
-    fig, ax = plt.subplots()
-
-    geom = starting_position()
-    paint = Painter(ax, geom)
-
-    paint.draw('xy')
-
-    ax.grid()
-    ax.set_ylim(-10, 10)
-    ax.set_xlim((-20, 1700))
-    ax.legend()
-    plt.show()
+    pass
