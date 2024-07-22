@@ -1,4 +1,10 @@
 from backend.painter import Painter
+from backend.geometry import Geometry
+
+from frontend.spotwindow import SpotWindow
+from frontend.targetwindow import TargetWindow
+from frontend.detectorwindow import DetectorWindow
+from frontend.collimatorwindow import CollimatorWindow
 
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import QSize, Qt, QMetaObject, QCoreApplication
@@ -99,21 +105,56 @@ class Ui_GeomWindow(object):
 
 
 class GeomWindow(QMainWindow, Ui_GeomWindow):
-    def __init__(self, paint: Painter) -> None:
+    def __init__(self, model: Geometry) -> None:
+        # Window init
         super().__init__()
         self.setupUi(self)
         self.setWindowIcon(QIcon('./icon.ico'))
 
-        self.paint = paint
-
+        # matplotlib
         layout = QVBoxLayout(self.matplotlib_layout)
         self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
         self.view.mpl_connect('button_press_event', self.add_pointer)
-
         self.axes = self.view.figure.subplots()
         self.toolbar = NavigationToolbar2QT(self.view, self.matplotlib_layout)
         layout.addWidget(self.toolbar)
         layout.addWidget(self.view)
+
+        # main painter
+        self.model = model
+        self.paint = Painter(self.axes, model)
+
+        # event handling
+        self.collimator1_button.clicked.connect(self.open_first_collimator)
+        self.collimator2_button.clicked.connect(self.open_last_collimator)
+        self.target_button.clicked.connect(self.open_target)
+        self.detector_button.clicked.connect(self.open_detector)
+        self.optics_button.clicked.connect(self.paint.switch_optics)
+        self.reflections_button.clicked.connect(self.paint.switch_reflections)
+        self.spot_button.clicked.connect(self.look_at_spot)
+
+    def add_pointer(self) -> None:
+        pass
+
+    def open_first_collimator(self) -> None:
+        self.window = CollimatorWindow(self.model.first_collimator)
+        self.window.show()
+
+    def open_last_collimator(self) -> None:
+        self.window = CollimatorWindow(self.model.last_collimator)
+        self.window.show()
+
+    def open_target(self) -> None:
+        self.window = TargetWindow(self.model.target)
+        self.window.show()
+
+    def open_detector(self) -> None:
+        self.window = DetectorWindow(self.model.detector)
+        self.window.show()
+
+    def look_at_spot(self) -> None:
+        self.window = SpotWindow(self.model)
+        self.window.show()
 
 
 if __name__ == '__main__':

@@ -144,13 +144,23 @@ class Painter:
 
         self.axis.plot(reflections[-1][0], reflections[-1][1], color='green', label='reflections')
 
-    def switch_enable_optics(self) -> None:
+    def switch_optics(self) -> None:
         self.is_optics_enable = not self.is_optics_enable
         self.draw(self.current_plane)
 
-    def switch_enable_reflections(self) -> None:
+    def switch_reflections(self) -> None:
         self.is_reflections_enable = not self.is_reflections_enable
         self.draw(self.current_plane)
+
+    def add_pointer(self, x: float) -> None:
+        if self.current_plane == 'xy':
+            coordinates = self.model.xy_plane()
+
+        if self.current_plane == 'xz':
+            coordinates = self.model.xz_plane()
+
+        if self.current_plane == 'yz':
+            coordinates = self.model.yz_plane()
 
 
 if __name__ == '__main__':
