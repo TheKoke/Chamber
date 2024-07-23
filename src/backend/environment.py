@@ -32,9 +32,17 @@ class Collimator(Environment):
     def radius(self) -> float:
         return self._r
     
+    @radius.setter
+    def radius(self, new: float) -> None:
+        self._r = new
+    
     @property
     def thickness(self) -> float:
         return self._t
+    
+    @thickness.setter
+    def thickness(self, new: float) -> float:
+        self._t = new
     
     @property
     def height(self) -> float:
@@ -51,9 +59,17 @@ class Target(Environment):
     def width(self) -> float:
         return self._w
     
+    @width.setter
+    def width(self, new: float) -> None:
+        self._w = new
+    
     @property
     def height(self) -> float:
         return self._h
+    
+    @height.setter
+    def height(self, new: float) -> None:
+        self._h = new
 
 
 class Detector(Environment):

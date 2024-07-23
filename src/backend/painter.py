@@ -16,8 +16,10 @@ class Painter:
         self.is_optics_enable = True
         self.is_reflections_enable = False
 
+        self.draw(self.current_plane)
+
     def draw(self, plane: str) -> None:
-        if plane.lower() not in ['xy', 'xz', 'yz'] or plane is None:
+        if plane is None or plane.lower() not in ['xy', 'xz', 'yz']:
             plane = 'xy'
 
         self.current_plane = plane
@@ -34,6 +36,9 @@ class Painter:
 
         if self.is_reflections_enable:
             self.draw_reflections()
+
+        self.axis.grid()
+        self.axis.legend()
 
     def draw_environment(self) -> None:
         if self.current_plane == 'xy':
@@ -111,7 +116,7 @@ class Painter:
         
         x0, y0 = self.model.target.x_position, self.model.target.y_position
         radii = self.model.detector.x_position - self.model.target.x_position
-        self.axis.add_patch(Arc((x0, y0), 2 * radii, 2 * radii, theta1=-10, theta2=10, linestyle='-.'))
+        self.axis.add_patch(Arc((x0, y0), 2 * radii, 2 * radii, theta1=-5, theta2=5, linestyle='-.'))
 
     def draw_optics(self) -> None:
         if self.current_plane == 'xy':

@@ -153,12 +153,33 @@ class Ui_CollimatorWindow(object):
 
 class CollimatorWindow(QDialog, Ui_CollimatorWindow):
     def __init__(self, collimator: Collimator) -> None:
+        # window initializing
         super().__init__()
         self.setupUi(self)
-
         self.setWindowIcon(QIcon('./icon.ico'))
 
+        # collimator
         self.collimator = collimator
+
+        # event handling
+        ok, cancel = self.okbutton.buttons()
+        ok.clicked.connect(self.save)
+        cancel.clicked.connect(self.close)
+
+    def save(self) -> None:
+        xcoord = self.xcoord_box.value()
+        ycoord = self.ycoord_box.value()
+        zcoord = self.zcoord_box.value()
+        radius = self.radius_box.value()
+        thickness = self.thickness_box.value()
+
+        dx = xcoord - self.collimator.x_position
+        dy = ycoord - self.collimator.y_position
+        dz = zcoord - self.collimator.z_position
+
+        self.collimator.move(dx, dy, dz)
+        self.collimator.radius = radius
+        self.collimator.thickness = thickness
 
 
 if __name__ == "__main__":

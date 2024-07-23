@@ -113,12 +113,29 @@ class Ui_DetectorWindow(object):
 
 class DetectorWindow(QDialog, Ui_DetectorWindow):
     def __init__(self, detector: Detector) -> None:
+        # window initializing
         super().__init__()
         self.setupUi(self)
-
         self.setWindowIcon(QIcon('./icon.ico'))
 
+        # detector
         self.detector = detector
+
+        # event handling
+        ok, cancel = self.okbutton.buttons()
+        ok.clicked.connect(self.save)
+        cancel.clicked.connect(self.close)
+
+    def save(self) -> None:
+        xcoord = self.xcoord_box.value()
+        ycoord = self.ycoord_box.value()
+        zcoord = self.zcoord_box.value()
+
+        dx = xcoord - self.detector.x_position
+        dy = ycoord - self.detector.y_position
+        dz = zcoord - self.detector.z_position
+
+        self.detector.move(dx, dy, dz)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import numpy
 
-from geometry import Geometry
+from backend.geometry import Geometry
 
 from matplotlib.axes import Axes
 from matplotlib.patches import Ellipse, Rectangle

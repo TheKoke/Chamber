@@ -153,12 +153,33 @@ class Ui_TargetWindow(object):
 
 class TargetWindow(QDialog, Ui_TargetWindow):
     def __init__(self, target: Target) -> None:
+        # window initializing
         super().__init__()
         self.setupUi(self)
-
         self.setWindowIcon(QIcon('./icon.ico'))
 
+        # target
         self.target = target
+
+        # event handling
+        ok, cancel = self.okbutton.buttons()
+        ok.clicked.connect(self.save)
+        cancel.clicked.connect(self.close)
+
+    def save(self) -> None:
+        xcoord = self.xcoord_box.value()
+        ycoord = self.ycoord_box.value()
+        zcoord = self.zcoord_box.value()
+        width = self.width_box.value()
+        height = self.height_box.value()
+
+        dx = xcoord - self.target.x_position
+        dy = ycoord - self.target.y_position
+        dz = zcoord - self.target.z_position
+
+        self.target.move(dx, dy, dz)
+        self.target.width = width
+        self.target.height = height
 
 
 if __name__ == "__main__":

@@ -106,7 +106,7 @@ class Ui_GeomWindow(object):
 
 class GeomWindow(QMainWindow, Ui_GeomWindow):
     def __init__(self, model: Geometry) -> None:
-        # Window init
+        # window initializing
         super().__init__()
         self.setupUi(self)
         self.setWindowIcon(QIcon('./icon.ico'))
@@ -120,7 +120,7 @@ class GeomWindow(QMainWindow, Ui_GeomWindow):
         layout.addWidget(self.toolbar)
         layout.addWidget(self.view)
 
-        # main painter
+        # model and painter
         self.model = model
         self.paint = Painter(self.axes, model)
 

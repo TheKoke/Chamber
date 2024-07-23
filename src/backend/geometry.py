@@ -1,5 +1,5 @@
 import numpy
-from environment import Collimator, Detector, Target
+from backend.environment import Collimator, Detector, Target
 
 
 class Geometry:
@@ -74,6 +74,9 @@ class Geometry:
         self.heights = self.build_heights()
         self.widths = self.build_widths()
         self.coordinates = self.build_coordinates()
+
+    def cutting_collimator_radius(self, diatnce: float) -> float:
+        pass
 
     def xy_plane(self) -> tuple[list[float], list[float]]:
         return (self.coordinates[0], self.coordinates[1])
