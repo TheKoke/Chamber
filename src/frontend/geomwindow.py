@@ -9,11 +9,12 @@ from frontend.collimatorwindow import CollimatorWindow
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import QSize, Qt, QMetaObject, QCoreApplication
 from PyQt5.QtWidgets import (
-    QHBoxLayout, QVBoxLayout, QFrame, QLabel, 
-    QPushButton, QTextEdit, QWidget, QMainWindow
+    QWidget, QMainWindow, QHBoxLayout, QVBoxLayout, 
+    QFrame, QLabel, QTextEdit, QPushButton, QRadioButton
 )
 
 from matplotlib.figure import Figure
+from matplotlib.backend_bases import MouseEvent, MouseButton
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT, FigureCanvasQTAgg
 
 
@@ -56,6 +57,15 @@ class Ui_GeomWindow(object):
         self.detector_button.setMinimumSize(QSize(0, 50))
         self.detector_button.setObjectName("detector_button")
         self.verticalLayout.addWidget(self.detector_button)
+        self.plane_layout = QHBoxLayout()
+        self.plane_layout.setObjectName("plane_layout")
+        self.xy_radio = QRadioButton(self.tools_layout)
+        self.xy_radio.setObjectName("xy_radio")
+        self.plane_layout.addWidget(self.xy_radio)
+        self.xz_radio = QRadioButton(self.tools_layout)
+        self.xz_radio.setObjectName("xz_radio")
+        self.plane_layout.addWidget(self.xz_radio)
+        self.verticalLayout.addLayout(self.plane_layout)
         self.output = QTextEdit(self.tools_layout)
         self.output.setObjectName("output")
         self.verticalLayout.addWidget(self.output)
@@ -98,6 +108,8 @@ class Ui_GeomWindow(object):
         self.collimator2_button.setText(_translate("GeomWindow", "2nd Collimator Settings"))
         self.target_button.setText(_translate("GeomWindow", "Target Settings"))
         self.detector_button.setText(_translate("GeomWindow", "Detector Settings"))
+        self.xy_radio.setText(_translate("GeomWindow", "XY-Plane"))
+        self.xz_radio.setText(_translate("GeomWindow", "XZ-Plane"))
         self.optics_button.setText(_translate("GeomWindow", "Optics"))
         self.reflections_button.setText(_translate("GeomWindow", "Reflections"))
         self.spot_button.setText(_translate("GeomWindow", "Spot on Target"))
@@ -129,32 +141,61 @@ class GeomWindow(QMainWindow, Ui_GeomWindow):
         self.collimator2_button.clicked.connect(self.open_last_collimator)
         self.target_button.clicked.connect(self.open_target)
         self.detector_button.clicked.connect(self.open_detector)
-        self.optics_button.clicked.connect(self.paint.switch_optics)
-        self.reflections_button.clicked.connect(self.paint.switch_reflections)
+        self.optics_button.clicked.connect(self.switch_optics)
+        self.reflections_button.clicked.connect(self.switch_reflections)
         self.spot_button.clicked.connect(self.look_at_spot)
 
-    def add_pointer(self) -> None:
-        pass
+        self.xy_radio.setChecked(True)
+        self.xy_radio.clicked.connect(self.xy_plane)
+        self.xz_radio.clicked.connect(self.xz_plane)
+
+    def add_pointer(self, event: MouseEvent) -> None:
+        if event.dblclick:
+            pass
+
+    def xy_plane(self) -> None:
+        self.paint.draw('xy')
+        self.view.draw()
+
+    def xz_plane(self) -> None:
+        self.paint.draw('xz')
+        self.view.draw()
+
+    def switch_optics(self) -> None:
+        self.paint.switch_optics()
+        self.view.draw()
+
+    def switch_reflections(self) -> None:
+        self.paint.switch_reflections()
+        self.view.draw()
 
     def open_first_collimator(self) -> None:
-        self.window = CollimatorWindow(self.model.first_collimator)
-        self.window.show()
+        self._window = CollimatorWindow(self.model.__first_collimator)
+        self._window.okbutton.buttons()[0].clicked.connect(self.refresh)
+        self._window.show()
 
     def open_last_collimator(self) -> None:
-        self.window = CollimatorWindow(self.model.last_collimator)
-        self.window.show()
+        self._window = CollimatorWindow(self.model.__last_collimator)
+        self._window.okbutton.buttons()[0].clicked.connect(self.refresh)
+        self._window.show()
 
     def open_target(self) -> None:
-        self.window = TargetWindow(self.model.target)
-        self.window.show()
+        self._window = TargetWindow(self.model.__target)
+        self._window.okbutton.buttons()[0].clicked.connect(self.refresh)
+        self._window.show()
 
     def open_detector(self) -> None:
-        self.window = DetectorWindow(self.model.detector)
-        self.window.show()
+        self._window = DetectorWindow(self.model.__detector)
+        self._window.okbutton.buttons()[0].clicked.connect(self.refresh)
+        self._window.show()
 
     def look_at_spot(self) -> None:
-        self.window = SpotWindow(self.model)
-        self.window.show()
+        self._window = SpotWindow(self.model)
+        self._window.show()
+
+    def refresh(self) -> None:
+        self.paint.draw(self.paint.current_plane)
+        self.view.draw()
 
 
 if __name__ == '__main__':

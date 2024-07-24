@@ -38,6 +38,7 @@ class Ui_CollimatorWindow(object):
         self.xcoord_layout.addWidget(self.xcoord_label)
         self.xcoord_box = QDoubleSpinBox(self.coordiantes_layout)
         self.xcoord_box.setMaximum(999999999.0)
+        self.xcoord_box.setMinimum(-999999999.0)
         self.xcoord_box.setSingleStep(0.1)
         self.xcoord_box.setObjectName("xcoord_box")
         self.xcoord_layout.addWidget(self.xcoord_box)
@@ -53,6 +54,7 @@ class Ui_CollimatorWindow(object):
         self.ycoord_layout.addWidget(self.ycoord_label)
         self.ycoord_box = QDoubleSpinBox(self.coordiantes_layout)
         self.ycoord_box.setMaximum(999999999.0)
+        self.ycoord_box.setMinimum(-999999999.0)
         self.ycoord_box.setSingleStep(0.1)
         self.ycoord_box.setObjectName("ycoord_box")
         self.ycoord_layout.addWidget(self.ycoord_box)
@@ -68,6 +70,7 @@ class Ui_CollimatorWindow(object):
         self.zcoord_layout.addWidget(self.zcoord_label)
         self.zcoord_box = QDoubleSpinBox(self.coordiantes_layout)
         self.zcoord_box.setMaximum(999999999.0)
+        self.zcoord_box.setMinimum(-999999999.0)
         self.zcoord_box.setSingleStep(0.1)
         self.zcoord_box.setObjectName("zcoord_box")
         self.zcoord_layout.addWidget(self.zcoord_box)
@@ -160,11 +163,20 @@ class CollimatorWindow(QDialog, Ui_CollimatorWindow):
 
         # collimator
         self.collimator = collimator
+        self.set_values()
 
         # event handling
         ok, cancel = self.okbutton.buttons()
         ok.clicked.connect(self.save)
         cancel.clicked.connect(self.close)
+
+    def set_values(self) -> None:
+        self.xcoord_box.setValue(self.collimator.x_position)
+        self.ycoord_box.setValue(self.collimator.y_position)
+        self.zcoord_box.setValue(self.collimator.z_position)
+
+        self.radius_box.setValue(self.collimator.radius)
+        self.thickness_box.setValue(self.collimator.thickness)
 
     def save(self) -> None:
         xcoord = self.xcoord_box.value()
@@ -180,6 +192,8 @@ class CollimatorWindow(QDialog, Ui_CollimatorWindow):
         self.collimator.move(dx, dy, dz)
         self.collimator.radius = radius
         self.collimator.thickness = thickness
+
+        self.close()
 
 
 if __name__ == "__main__":
