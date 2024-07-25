@@ -44,53 +44,53 @@ class Painter:
     def draw_environment(self) -> None:
         if self.current_plane == 'xy':
             # first collimator
-            c1 = self.model.__first_collimator
+            c1 = self.model.first_collimator
             self.__add_collimator(c1.x_position, c1.y_position, c1.radius, c1.thickness, c1.height)
 
             # last collimator
-            c2 = self.model.__last_collimator
+            c2 = self.model.last_collimator
             self.__add_collimator(c2.x_position, c2.y_position, c2.radius, c2.thickness, c2.height)
 
             # target
-            t = self.model.__target
+            t = self.model.target
             self.__add_target(t.x_position, t.y_position, t.width)
 
             # detector
-            d = self.model.__detector
+            d = self.model.detector
             self.__add_detector(d.x_position, d.y_position)
 
         if self.current_plane == 'xz':
             # first collimator
-            c1 = self.model.__first_collimator
+            c1 = self.model.first_collimator
             self.__add_collimator(c1.x_position, c1.z_position, c1.radius, c1.thickness, c1.height)
 
             # last collimator
-            c2 = self.model.__last_collimator
+            c2 = self.model.last_collimator
             self.__add_collimator(c2.x_position, c2.z_position, c2.radius, c2.thickness, c2.height)
 
             # target
-            t = self.model.__target
+            t = self.model.target
             self.__add_target(t.x_position, t.z_position, t.height)
 
             # detector
-            d = self.model.__detector
+            d = self.model.detector
             self.__add_detector(d.x_position, d.z_position)
 
         if self.current_plane == 'yz':
             # first collimator
-            c1 = self.model.__first_collimator
+            c1 = self.model.first_collimator
             self.__add_collimator(c1.y_position, c1.z_position, c1.radius, c1.thickness, c1.height)
 
             # last collimator
-            c2 = self.model.__last_collimator
+            c2 = self.model.last_collimator
             self.__add_collimator(c2.y_position, c2.z_position, c2.radius, c2.thickness, c2.height)
 
             # target
-            t = self.model.__target
+            t = self.model.target
             self.__add_target(t.y_position, t.z_position, t.width)
 
             # detector
-            d = self.model.__detector
+            d = self.model.detector
             self.__add_detector(d.y_position, d.z_position)
 
     def __add_collimator(self, axis_x: float, axis_y: float, radius: float, thickness: float, height: float) -> None:
@@ -115,8 +115,8 @@ class Painter:
             label='detector'
         ))
         
-        x0, y0 = self.model.__target.x_position, self.model.__target.y_position
-        radii = self.model.__detector.x_position - self.model.__target.x_position
+        x0, y0 = self.model.target.x_position, self.model.target.y_position
+        radii = self.model.detector.x_position - self.model.target.x_position
         self.axis.add_patch(Arc((x0, y0), 2 * radii, 2 * radii, theta1=-5, theta2=5, linestyle='-.'))
 
     def draw_optics(self) -> None:

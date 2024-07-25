@@ -68,6 +68,7 @@ class Ui_GeomWindow(object):
         self.verticalLayout.addLayout(self.plane_layout)
         self.output = QTextEdit(self.tools_layout)
         self.output.setObjectName("output")
+        self.output.setReadOnly(True)
         self.verticalLayout.addWidget(self.output)
         self.optics_button = QPushButton(self.tools_layout)
         self.optics_button.setMinimumSize(QSize(0, 50))
@@ -132,9 +133,10 @@ class GeomWindow(QMainWindow, Ui_GeomWindow):
         layout.addWidget(self.toolbar)
         layout.addWidget(self.view)
 
-        # model and painter
+        # model, painter and pointer
         self.model = model
         self.paint = Painter(self.axes, model)
+        self.pointer = None
 
         # event handling
         self.collimator1_button.clicked.connect(self.open_first_collimator)
@@ -149,9 +151,21 @@ class GeomWindow(QMainWindow, Ui_GeomWindow):
         self.xy_radio.clicked.connect(self.xy_plane)
         self.xz_radio.clicked.connect(self.xz_plane)
 
+        self.show_output()
+
     def add_pointer(self, event: MouseEvent) -> None:
         if event.dblclick:
             pass
+
+    def show_output(self) -> None:
+        output = f'Spot on Target: {round(self.model.spot_on_target(), 3)} mm\n\n'
+        output += f'Spot on Detector: {round(self.model.spot_on_detector(), 3)} mm\n\n'
+        output += f'Angle resolution: {round(self.model.angle_resolution(), 3)} deg.\n\n'
+
+        if self.pointer is not None:
+            output += f'Cutting Collimator Radius must be: {round(self.model.spot_at_distance(self.pointer), 3)}'
+
+        self.output.setText(output)
 
     def xy_plane(self) -> None:
         self.paint.draw('xy')
@@ -170,22 +184,22 @@ class GeomWindow(QMainWindow, Ui_GeomWindow):
         self.view.draw()
 
     def open_first_collimator(self) -> None:
-        self._window = CollimatorWindow(self.model.__first_collimator)
+        self._window = CollimatorWindow(self.model.first_collimator)
         self._window.okbutton.buttons()[0].clicked.connect(self.refresh)
         self._window.show()
 
     def open_last_collimator(self) -> None:
-        self._window = CollimatorWindow(self.model.__last_collimator)
+        self._window = CollimatorWindow(self.model.last_collimator)
         self._window.okbutton.buttons()[0].clicked.connect(self.refresh)
         self._window.show()
 
     def open_target(self) -> None:
-        self._window = TargetWindow(self.model.__target)
+        self._window = TargetWindow(self.model.target)
         self._window.okbutton.buttons()[0].clicked.connect(self.refresh)
         self._window.show()
 
     def open_detector(self) -> None:
-        self._window = DetectorWindow(self.model.__detector)
+        self._window = DetectorWindow(self.model.detector)
         self._window.okbutton.buttons()[0].clicked.connect(self.refresh)
         self._window.show()
 
@@ -194,6 +208,8 @@ class GeomWindow(QMainWindow, Ui_GeomWindow):
         self._window.show()
 
     def refresh(self) -> None:
+        self.show_output()
+
         self.paint.draw(self.paint.current_plane)
         self.view.draw()
 

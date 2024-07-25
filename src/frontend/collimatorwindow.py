@@ -139,7 +139,7 @@ class Ui_CollimatorWindow(object):
 
     def retranslateUi(self, DetectorWindow):
         _translate = QCoreApplication.translate
-        DetectorWindow.setWindowTitle(_translate("CollimatorWindow", "Collimator Settings"))
+        DetectorWindow.setWindowTitle(_translate("CollimatorWindow", "Collimator Settings - Chamber"))
         self.xcoord_label.setText(_translate("CollimatorWindow", "X:"))
         self.xcoord_box.setSuffix(_translate("CollimatorWindow", " mm"))
         self.ycoord_label.setText(_translate("CollimatorWindow", "Y:"))

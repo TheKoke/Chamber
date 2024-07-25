@@ -104,7 +104,7 @@ class Ui_DetectorWindow(object):
 
     def retranslateUi(self, DetectorWindow):
         _translate = QCoreApplication.translate
-        DetectorWindow.setWindowTitle(_translate("DetectorWindow", "Detector Settings"))
+        DetectorWindow.setWindowTitle(_translate("DetectorWindow", "Detector Settings - Chamber"))
         self.xcoord_label.setText(_translate("DetectorWindow", "X:"))
         self.xcoord_box.setSuffix(_translate("DetectorWindow", " mm"))
         self.ycoord_label.setText(_translate("DetectorWindow", "Y:"))

@@ -30,30 +30,46 @@ class Geometry:
     def projection_formula(d1: float, h1: float, d2: float) -> float:
         return h1 * (d2 / d1)
     
-    def cutting_collimator_radius(self, distance: float) -> float:
-        pass
-
-    def xy_optics(self) -> list[list[float]]:
+    def spot_at_distance(self, distance: float) -> float:
         h1 = self.__first_collimator.radius
         h2 = self.__last_collimator.radius
         
         crossing_h = self.__last_collimator.x_position - h1 * self.__last_collimator.x_position / (h1 + h2)
         d1 = self.__last_collimator.x_position - crossing_h
-        d2_target = self.__target.x_position - crossing_h
-        d2_detector = self.__detector.x_position - crossing_h
 
-        on_target = Geometry.projection_formula(d1, h1, d2_target)
-        on_detector = Geometry.projection_formula(d1, h1, d2_detector)
+        return Geometry.projection_formula(d1, h2, distance - crossing_h)
+    
+    def spot_on_target(self) -> float:
+        return self.spot_at_distance(self.__target.x_position)
 
+    def spot_on_detector(self) -> float:
+        return self.spot_at_distance(self.__detector.x_position)
+    
+    def angle_resolution(self) -> float:
+        angle_scale = 360 / (2 * numpy.pi * (self.__detector.x_position - self.__target.x_position))
+        return angle_scale * self.spot_on_detector() / 2
+
+    def xy_optics(self) -> list[list[float]]:
         xs = []
         for i in range(len(self._environments)):
             xs.append(self._environments[i].x_position)
             xs.append(self._environments[i].x_position)
 
         ys = [
-            self.__first_collimator.radius / 2, -self.__first_collimator.radius / 2,
-            self.__last_collimator.radius / 2, -self.__last_collimator.radius / 2,
+            self.__first_collimator.radius / 2 + self.__first_collimator.y_position,
+            -self.__first_collimator.radius / 2 + self.__first_collimator.y_position,
+            self.__last_collimator.radius / 2 + self.__last_collimator.y_position, 
+            -self.__last_collimator.radius / 2 + self.__last_collimator.y_position,
         ]
+
+        first_coeffs = numpy.linalg.solve(numpy.array([[xs[0], 1], [xs[2], 1]]), numpy.array([ys[0], ys[3]]))
+        second_coeffs = numpy.linalg.solve(numpy.array([[xs[1], 1], [xs[3], 1]]), numpy.array([ys[1], ys[2]]))
+
+        for i in range(2, len(self._environments)):
+            ys.append(second_coeffs[0] * self._environments[i].x_position + second_coeffs[1])
+            ys.append(first_coeffs[0] * self._environments[i].x_position + first_coeffs[1])
+
+        return [xs, ys]
     
     def xy_reflections(self) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
         lines = 10
@@ -91,7 +107,26 @@ class Geometry:
         return reflections
     
     def xz_optics(self) -> list[list[float]]:
-        pass
+        xs = []
+        for i in range(len(self._environments)):
+            xs.append(self._environments[i].x_position)
+            xs.append(self._environments[i].x_position)
+
+        zs = [
+            self.__first_collimator.radius / 2 + self.__first_collimator.z_position,
+            -self.__first_collimator.radius / 2 + self.__first_collimator.z_position,
+            self.__last_collimator.radius / 2 + self.__last_collimator.z_position, 
+            -self.__last_collimator.radius / 2 + self.__last_collimator.z_position,
+        ]
+
+        first_coeffs = numpy.linalg.solve(numpy.array([[xs[0], 1], [xs[2], 1]]), numpy.array([zs[0], zs[3]]))
+        second_coeffs = numpy.linalg.solve(numpy.array([[xs[1], 1], [xs[3], 1]]), numpy.array([zs[1], zs[2]]))
+
+        for i in range(2, len(self._environments)):
+            zs.append(second_coeffs[0] * self._environments[i].x_position + second_coeffs[1])
+            zs.append(first_coeffs[0] * self._environments[i].x_position + first_coeffs[1])
+
+        return [xs, zs]
     
     def xz_reflections(self) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
         lines = 10
@@ -129,7 +164,26 @@ class Geometry:
         return reflections
     
     def yz_optics(self) -> None:
-        pass
+        ys = []
+        for i in range(len(self._environments)):
+            ys.append(self._environments[i].y_position)
+            ys.append(self._environments[i].y_position)
+
+        zs = [
+            self.__first_collimator.radius / 2 + self.__first_collimator.z_position,
+            -self.__first_collimator.radius / 2 + self.__first_collimator.z_position,
+            self.__last_collimator.radius / 2 + self.__last_collimator.z_position, 
+            -self.__last_collimator.radius / 2 + self.__last_collimator.z_position,
+        ]
+
+        first_coeffs = numpy.linalg.solve(numpy.array([[ys[0], 1], [ys[2], 1]]), numpy.array([zs[0], zs[3]]))
+        second_coeffs = numpy.linalg.solve(numpy.array([[ys[1], 1], [ys[3], 1]]), numpy.array([zs[1], zs[2]]))
+
+        for i in range(2, len(self._environments)):
+            zs.append(second_coeffs[0] * self._environments[i].y_position + second_coeffs[1])
+            zs.append(first_coeffs[0] * self._environments[i].y_position + first_coeffs[1])
+
+        return [ys, zs]
 
     def yz_reflections(self) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
         lines = 10
