@@ -1,7 +1,9 @@
 from backend.geometry import Geometry
 from backend.spot import SpotModel
 
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
+
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT, FigureCanvasQTAgg
 
@@ -9,6 +11,8 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT, FigureCanva
 class SpotWindow(QWidget):
     def __init__(self, geometry: Geometry) -> None:
         super().__init__()
+        self.setWindowTitle('Looking at spot - Chamber')
+        self.setWindowIcon(QIcon('./icon.ico'))
 
         self.view = FigureCanvasQTAgg(Figure(figsize=(9, 9)))
         self.axes = self.view.figure.subplots()
@@ -27,9 +31,7 @@ class SpotWindow(QWidget):
 
     def start(self) -> None:
         self.spot.draw()
-
-        self.axes.set_aspect('equal')
-        self.axes.legend()
+        self.view.draw()
 
 
 if __name__ == '__main__':
