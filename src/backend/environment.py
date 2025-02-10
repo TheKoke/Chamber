@@ -34,6 +34,9 @@ class Collimator(Environment):
     
     @radius.setter
     def radius(self, new: float) -> None:
+        if new <= 0:
+            return
+        
         self._r = new
     
     @property
@@ -42,6 +45,9 @@ class Collimator(Environment):
     
     @thickness.setter
     def thickness(self, new: float) -> float:
+        if new <= 0:
+            return
+        
         self._t = new
     
     @property
@@ -61,6 +67,9 @@ class Target(Environment):
     
     @width.setter
     def width(self, new: float) -> None:
+        if new <= 0:
+            return
+        
         self._w = new
     
     @property
@@ -69,12 +78,45 @@ class Target(Environment):
     
     @height.setter
     def height(self, new: float) -> None:
+        if new <= 0:
+            return
+        
         self._h = new
 
 
 class Detector(Environment):
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
         super().__init__(x, y, z)
+
+
+class Faraday(Environment):
+    def __init__(self, length: float, radius: float, x: float = 0.0, y: float = 0.0, z: float = 0.0):
+        super().__init__(x, y, z)
+
+        self._l = length
+        self._r = radius
+
+    @property
+    def length(self) -> float:
+        return self._l
+    
+    @length.setter
+    def length(self, new: float) -> None:
+        if new <= 0:
+            return
+        
+        self._l = new
+
+    @property
+    def radius(self) -> float:
+        return self._r
+    
+    @radius.setter
+    def radius(self, new: float) -> None:
+        if new <= 0:
+            return
+        
+        self._r = new
 
 
 if __name__ == '__main__':

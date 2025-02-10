@@ -43,13 +43,10 @@ class Painter:
 
     def draw_environment(self) -> None:
         if self.current_plane == 'xy':
-            # first collimator
-            c1 = self.model.first_collimator
-            self.__add_collimator(c1.x_position, c1.y_position, c1.radius, c1.thickness, c1.height)
-
-            # last collimator
-            c2 = self.model.last_collimator
-            self.__add_collimator(c2.x_position, c2.y_position, c2.radius, c2.thickness, c2.height)
+            # collimators
+            collims = self.model.collimators
+            for c in collims:
+                self.__add_collimator(c.x_position, c.y_position, c.radius, c.thickness, c.height)
 
             # target
             t = self.model.target
@@ -60,13 +57,10 @@ class Painter:
             self.__add_detector(d.x_position, d.y_position)
 
         if self.current_plane == 'xz':
-            # first collimator
-            c1 = self.model.first_collimator
-            self.__add_collimator(c1.x_position, c1.z_position, c1.radius, c1.thickness, c1.height)
-
-            # last collimator
-            c2 = self.model.last_collimator
-            self.__add_collimator(c2.x_position, c2.z_position, c2.radius, c2.thickness, c2.height)
+            # collimators
+            collims = self.model.collimators
+            for c in collims:
+                self.__add_collimator(c.x_position, c.z_position, c.radius, c.thickness, c.height)
 
             # target
             t = self.model.target
@@ -78,12 +72,9 @@ class Painter:
 
         if self.current_plane == 'yz':
             # first collimator
-            c1 = self.model.first_collimator
-            self.__add_collimator(c1.y_position, c1.z_position, c1.radius, c1.thickness, c1.height)
-
-            # last collimator
-            c2 = self.model.last_collimator
-            self.__add_collimator(c2.y_position, c2.z_position, c2.radius, c2.thickness, c2.height)
+            collims = self.model.collimators
+            for c in collims:
+                self.__add_collimator(c.y_position, c.z_position, c.radius, c.thickness, c.height)
 
             # target
             t = self.model.target
