@@ -1,3 +1,10 @@
+from matplotlib.axes import Axes
+from matplotlib.patches import Rectangle, Arc
+
+
+SCOPING = 10
+
+
 class Environment:
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
         self._x = x
@@ -21,12 +28,16 @@ class Environment:
         self._y += dy
         self._z += dz
 
+    def draw(self, axis: Axes, plane: str = 'xy') -> None:
+        pass
+
 
 class Collimator(Environment):
     def __init__(self, radius: float, thickness: float, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
         super().__init__(x, y, z)
         self._r = radius
         self._t = thickness
+        self._h = 6 * self._r
 
     @property
     def radius(self) -> float:
@@ -52,7 +63,35 @@ class Collimator(Environment):
     
     @property
     def height(self) -> float:
-        return 6 * self._r
+        return self._h
+    
+    def draw(self, axis: Axes, plane: str = 'xy') -> None:
+        if plane == 'xy':
+            axis.add_patch(Rectangle(
+                (self._x, self._y + self._r / 2), self._t * SCOPING, self._h / 2 - self._r, color='black', label='collimator'
+            ))
+
+            axis.add_patch(Rectangle(
+                (self._x, self._y - self._h / 2 + self._r / 2), self._t * SCOPING, self._h / 2 - self._r, color='black'
+            ))
+
+        if plane == 'xz':
+            axis.add_patch(Rectangle(
+                (self._x, self._z + self._r / 2), self._t * SCOPING, self._h / 2 - self._r, color='black', label='collimator'
+            ))
+
+            axis.add_patch(Rectangle(
+                (self._x, self._z - self._h / 2 + self._r / 2), self._t * SCOPING, self._h / 2 - self._r, color='black'
+            ))
+
+        if plane == 'yz':
+            axis.add_patch(Rectangle(
+                (self._y, self._z + self._r / 2), self._t * SCOPING, self._H / 2 - self._r, color='black', label='collimator'
+            ))
+
+            axis.add_patch(Rectangle(
+                (self._y, self._z - self._h / 2 + self._r / 2), self._t * SCOPING, self._h / 2 - self._r, color='black'
+            ))
     
 
 class Target(Environment):
@@ -83,10 +122,49 @@ class Target(Environment):
         
         self._h = new
 
+    def draw(self, axis: Axes, plane: str = 'xy') -> None:
+        if plane == 'xy':
+            axis.plot([self._x, self._x], [self._y - self._h / 2, self._y + self._h / 2], color='purple', label='target')
+
+        if plane == 'xz':
+            axis.plot([self._x, self._x], [self._z - self._h / 2, self._z + self._h / 2], color='purple', label='target')
+
+        if plane == 'yz':
+            axis.plot([self._y, self._y], [self._z - self._h / 2, self._z + self._h / 2], color='purple', label='target')
+
 
 class Detector(Environment):
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
         super().__init__(x, y, z)
+
+    def draw(self, axis: Axes, plane: str = 'xy') -> None:
+        DETECTOR_WIDTH = 12.0
+        if plane == 'xy':
+            axis.add_patch(Rectangle(
+                (self._x, self._y - DETECTOR_WIDTH / (2 * SCOPING)), 
+                DETECTOR_WIDTH * SCOPING, 
+                DETECTOR_WIDTH / SCOPING, 
+                color='blue', 
+                label='detector'
+            ))
+
+        if plane == 'xz':
+            axis.add_patch(Rectangle(
+                (self._x, self._z - DETECTOR_WIDTH / (2 * SCOPING)), 
+                DETECTOR_WIDTH * SCOPING, 
+                DETECTOR_WIDTH / SCOPING, 
+                color='blue', 
+                label='detector'
+            ))
+
+        if plane == 'yz':
+            axis.add_patch(Rectangle(
+                (self._y, self._z - DETECTOR_WIDTH / (2 * SCOPING)), 
+                DETECTOR_WIDTH * SCOPING, 
+                DETECTOR_WIDTH / SCOPING, 
+                color='blue', 
+                label='detector'
+            ))
 
 
 class Faraday(Environment):
@@ -117,6 +195,16 @@ class Faraday(Environment):
             return
         
         self._r = new
+
+    def draw(self, axis: Axes, plane: str = 'xy') -> None:
+        if plane == 'xy':
+            pass
+
+        if plane == 'xz':
+            pass
+
+        if plane == 'yz':
+            pass
 
 
 if __name__ == '__main__':
