@@ -19,7 +19,7 @@ class Painter:
         self.draw(self.current_plane)
 
     def draw(self, plane: str) -> None:
-        if plane is None or plane.lower() not in ['xy', 'xz', 'yz']:
+        if plane is None or plane.lower() not in ['xy', 'xz']:
             plane = 'xy'
 
         self.current_plane = plane

@@ -83,15 +83,6 @@ class Collimator(Environment):
             axis.add_patch(Rectangle(
                 (self._x, self._z - self._h / 2 + self._r / 2), self._t * SCOPING, self._h / 2 - self._r, color='black'
             ))
-
-        if plane == 'yz':
-            axis.add_patch(Rectangle(
-                (self._y, self._z + self._r / 2), self._t * SCOPING, self._H / 2 - self._r, color='black', label='collimator'
-            ))
-
-            axis.add_patch(Rectangle(
-                (self._y, self._z - self._h / 2 + self._r / 2), self._t * SCOPING, self._h / 2 - self._r, color='black'
-            ))
     
 
 class Target(Environment):
@@ -129,9 +120,6 @@ class Target(Environment):
         if plane == 'xz':
             axis.plot([self._x, self._x], [self._z - self._h / 2, self._z + self._h / 2], color='purple', label='target')
 
-        if plane == 'yz':
-            axis.plot([self._y, self._y], [self._z - self._h / 2, self._z + self._h / 2], color='purple', label='target')
-
 
 class Detector(Environment):
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
@@ -156,16 +144,6 @@ class Detector(Environment):
                 color='blue', 
                 label='detector'
             ))
-
-        if plane == 'yz':
-            axis.add_patch(Rectangle(
-                (self._y, self._z - DETECTOR_WIDTH / (2 * SCOPING)), 
-                DETECTOR_WIDTH * SCOPING, 
-                DETECTOR_WIDTH / SCOPING, 
-                color='blue', 
-                label='detector'
-            ))
-
 
 class Faraday(Environment):
     def __init__(self, length: float, radius: float, x: float = 0.0, y: float = 0.0, z: float = 0.0):
@@ -201,9 +179,6 @@ class Faraday(Environment):
             pass
 
         if plane == 'xz':
-            pass
-
-        if plane == 'yz':
             pass
 
 

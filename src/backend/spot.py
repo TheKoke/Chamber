@@ -42,16 +42,16 @@ class SpotModel:
     def calculate_angle(self) -> float:
         y1 = self.model.first_collimator.y_position
         y2 = self.model.last_collimator.y_position
-        dy = abs(y2 - y1)
+        dy = y2 - y1
 
         z1 = self.model.first_collimator.z_position
         z2 = self.model.last_collimator.z_position
-        dz = abs(z2 - z1)
+        dz = z2 - z1
 
         if dy == 0:
             return 90
 
-        return (numpy.arctan(dz / dy)) * 180 / numpy.pi # I'm not positive on that.
+        return 90 + numpy.arctan(dz / dy) * 180 / numpy.pi
 
     def calculate_width(self) -> float:
         r1 = self.model.first_collimator.radius
