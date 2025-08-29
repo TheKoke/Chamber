@@ -1,5 +1,23 @@
 import numpy
-from backend.environment import Environment, Collimator, Detector, Target
+from backend.environment import *
+
+class Chamber:
+    def __init__(self, trgt: Target, ctube: CollimationTube, telescopes: list[Telescope]) -> None:
+        self.__target = trgt
+        self.__ctube = ctube
+        self.__telescopes = telescopes
+
+    @property
+    def target(self) -> Target:
+        return self.__target
+    
+    @property
+    def ctube(self) -> CollimationTube:
+        return self.__ctube
+    
+    @property
+    def telescopes(self) -> list[Telescope]:
+        return self.__telescopes
 
 
 class Geometry:

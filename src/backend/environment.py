@@ -1,3 +1,42 @@
+from __future__ import annotations
+
+
+class Tube:
+    def __init__(self, first: Collimator, second: Collimator) -> None:
+        self._f = first
+        self._s = second
+
+    @property
+    def first_collimator(self) -> Collimator:
+        return self._f
+    
+    @property
+    def second_collimator(self) -> Collimator:
+        return self._s
+    
+    @property
+    def length(self) -> float:
+        xs = (self._s.x_position - self._f.x_position)**2
+        ys = (self._s.y_position - self._f.y_position)**2
+        zs = (self._s.z_position - self._f.z_position)**2
+        return (xs + ys + zs) ** (1/2)
+    
+
+class CollimationTube(Tube):
+    def __init__(self, first: Collimator, second: Collimator) -> None:
+        super().__init__(first, second)
+
+
+class Telescope(Tube):
+    def __init__(self, first: Collimator, second: Collimator, detector: Detector) -> None:
+        super().__init__(first, second)
+        self._d = detector
+    
+    @property
+    def detector(self) -> Detector:
+        return self._d
+
+
 class Environment:
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
         self._x = x
