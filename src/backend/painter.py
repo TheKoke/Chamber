@@ -19,7 +19,7 @@ class Painter:
         self.draw(self.current_plane)
 
     def draw(self, plane: str) -> None:
-        if plane is None or plane.lower() not in ['xy', 'xz', 'yz']:
+        if plane is None or plane.lower() not in ['xy', 'xz']:
             plane = 'xy'
 
         self.current_plane = plane
@@ -42,82 +42,15 @@ class Painter:
         self.axis.legend()
 
     def draw_environment(self) -> None:
-        if self.current_plane == 'xy':
-            # first collimator
-            c1 = self.model.first_collimator
-            self.__add_collimator(c1.x_position, c1.y_position, c1.radius, c1.thickness, c1.height)
+        # first collimator
+        for c in self.model.collimators:
+            c.draw(self.axis, self.current_plane)
 
-            # last collimator
-            c2 = self.model.last_collimator
-            self.__add_collimator(c2.x_position, c2.y_position, c2.radius, c2.thickness, c2.height)
+        # target
+        self.model.target.draw(self.axis, self.current_plane)
 
-            # target
-            t = self.model.target
-            self.__add_target(t.x_position, t.y_position, t.width)
-
-            # detector
-            d = self.model.detector
-            self.__add_detector(d.x_position, d.y_position)
-
-        if self.current_plane == 'xz':
-            # first collimator
-            c1 = self.model.first_collimator
-            self.__add_collimator(c1.x_position, c1.z_position, c1.radius, c1.thickness, c1.height)
-
-            # last collimator
-            c2 = self.model.last_collimator
-            self.__add_collimator(c2.x_position, c2.z_position, c2.radius, c2.thickness, c2.height)
-
-            # target
-            t = self.model.target
-            self.__add_target(t.x_position, t.z_position, t.height)
-
-            # detector
-            d = self.model.detector
-            self.__add_detector(d.x_position, d.z_position)
-
-        if self.current_plane == 'yz':
-            # first collimator
-            c1 = self.model.first_collimator
-            self.__add_collimator(c1.y_position, c1.z_position, c1.radius, c1.thickness, c1.height)
-
-            # last collimator
-            c2 = self.model.last_collimator
-            self.__add_collimator(c2.y_position, c2.z_position, c2.radius, c2.thickness, c2.height)
-
-            # target
-            t = self.model.target
-            self.__add_target(t.y_position, t.z_position, t.width)
-
-            # detector
-            d = self.model.detector
-            self.__add_detector(d.y_position, d.z_position)
-
-    def __add_collimator(self, axis_x: float, axis_y: float, radius: float, thickness: float, height: float) -> None:
-        self.axis.add_patch(Rectangle(
-            (axis_x, axis_y + radius / 2), thickness * SCOPING, height / 2 - radius, color='black', label='collimator'
-        ))
-
-        self.axis.add_patch(Rectangle(
-            (axis_x, axis_y - height / 2 + radius / 2), thickness * SCOPING, height / 2 - radius, color='black'
-        ))
-
-    def __add_target(self, axis_x: float, axis_y: float, height: float) -> None:
-        self.axis.plot([axis_x, axis_x], [axis_y - height / 2, axis_y + height / 2], color='purple', label='target')
-
-    def __add_detector(self, axis_x: float, axis_y: float) -> None:
-        DETECTOR_WIDTH = 12.0
-        self.axis.add_patch(Rectangle(
-            (axis_x, axis_y - DETECTOR_WIDTH / (2 * SCOPING)), 
-            DETECTOR_WIDTH * SCOPING, 
-            DETECTOR_WIDTH / SCOPING, 
-            color='blue', 
-            label='detector'
-        ))
-        
-        x0, y0 = self.model.target.x_position, self.model.target.y_position
-        radii = self.model.detector.x_position - self.model.target.x_position
-        self.axis.add_patch(Arc((x0, y0), 2 * radii, 2 * radii, theta1=-5, theta2=5, linestyle='-.'))
+        # detector
+        self.model.detector.draw(self.axis, self.current_plane)
 
     def draw_optics(self) -> None:
         if self.current_plane == 'xy':
@@ -163,4 +96,7 @@ class Painter:
 
 
 if __name__ == '__main__':
+    # x0, y0 = self.model.target.x_position, self.model.target.y_position
+    # radii = self.model.detector.x_position - self.model.target.x_position
+    # self.axis.add_patch(Arc((x0, y0), 2 * radii, 2 * radii, theta1=-180, theta2=180, linestyle='-.'))
     pass
