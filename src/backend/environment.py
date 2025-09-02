@@ -1,8 +1,40 @@
-from matplotlib.axes import Axes
-from matplotlib.patches import Rectangle, Arc
+from __future__ import annotations
 
 
-SCOPING = 10
+class Tube:
+    def __init__(self, first: Collimator, second: Collimator) -> None:
+        self._f = first
+        self._s = second
+
+    @property
+    def first_collimator(self) -> Collimator:
+        return self._f
+    
+    @property
+    def second_collimator(self) -> Collimator:
+        return self._s
+    
+    @property
+    def length(self) -> float:
+        xs = (self._s.x_position - self._f.x_position)**2
+        ys = (self._s.y_position - self._f.y_position)**2
+        zs = (self._s.z_position - self._f.z_position)**2
+        return (xs + ys + zs) ** (1/2)
+    
+
+class CollimationTube(Tube):
+    def __init__(self, first: Collimator, second: Collimator) -> None:
+        super().__init__(first, second)
+
+
+class Telescope(Tube):
+    def __init__(self, first: Collimator, second: Collimator, detector: Detector) -> None:
+        super().__init__(first, second)
+        self._d = detector
+    
+    @property
+    def detector(self) -> Detector:
+        return self._d
 
 
 class Environment:
@@ -28,16 +60,12 @@ class Environment:
         self._y += dy
         self._z += dz
 
-    def draw(self, axis: Axes, plane: str = 'xy') -> None:
-        pass
-
 
 class Collimator(Environment):
     def __init__(self, radius: float, thickness: float, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
         super().__init__(x, y, z)
         self._r = radius
         self._t = thickness
-        self._h = 6 * self._r
 
     @property
     def radius(self) -> float:
@@ -45,9 +73,6 @@ class Collimator(Environment):
     
     @radius.setter
     def radius(self, new: float) -> None:
-        if new <= 0:
-            return
-        
         self._r = new
     
     @property
@@ -56,33 +81,11 @@ class Collimator(Environment):
     
     @thickness.setter
     def thickness(self, new: float) -> float:
-        if new <= 0:
-            return
-        
         self._t = new
     
     @property
     def height(self) -> float:
-        return self._h
-    
-    def draw(self, axis: Axes, plane: str = 'xy') -> None:
-        if plane == 'xy':
-            axis.add_patch(Rectangle(
-                (self._x, self._y + self._r / 2), self._t * SCOPING, self._h / 2 - self._r, color='black', label='collimator'
-            ))
-
-            axis.add_patch(Rectangle(
-                (self._x, self._y - self._h / 2 + self._r / 2), self._t * SCOPING, self._h / 2 - self._r, color='black'
-            ))
-
-        if plane == 'xz':
-            axis.add_patch(Rectangle(
-                (self._x, self._z + self._r / 2), self._t * SCOPING, self._h / 2 - self._r, color='black', label='collimator'
-            ))
-
-            axis.add_patch(Rectangle(
-                (self._x, self._z - self._h / 2 + self._r / 2), self._t * SCOPING, self._h / 2 - self._r, color='black'
-            ))
+        return 6 * self._r
     
 
 class Target(Environment):
@@ -97,9 +100,6 @@ class Target(Environment):
     
     @width.setter
     def width(self, new: float) -> None:
-        if new <= 0:
-            return
-        
         self._w = new
     
     @property
@@ -108,78 +108,12 @@ class Target(Environment):
     
     @height.setter
     def height(self, new: float) -> None:
-        if new <= 0:
-            return
-        
         self._h = new
-
-    def draw(self, axis: Axes, plane: str = 'xy') -> None:
-        if plane == 'xy':
-            axis.plot([self._x, self._x], [self._y - self._h / 2, self._y + self._h / 2], color='purple', label='target')
-
-        if plane == 'xz':
-            axis.plot([self._x, self._x], [self._z - self._h / 2, self._z + self._h / 2], color='purple', label='target')
 
 
 class Detector(Environment):
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
         super().__init__(x, y, z)
-
-    def draw(self, axis: Axes, plane: str = 'xy') -> None:
-        DETECTOR_WIDTH = 12.0
-        if plane == 'xy':
-            axis.add_patch(Rectangle(
-                (self._x, self._y - DETECTOR_WIDTH / (2 * SCOPING)), 
-                DETECTOR_WIDTH * SCOPING, 
-                DETECTOR_WIDTH / SCOPING, 
-                color='blue', 
-                label='detector'
-            ))
-
-        if plane == 'xz':
-            axis.add_patch(Rectangle(
-                (self._x, self._z - DETECTOR_WIDTH / (2 * SCOPING)), 
-                DETECTOR_WIDTH * SCOPING, 
-                DETECTOR_WIDTH / SCOPING, 
-                color='blue', 
-                label='detector'
-            ))
-
-class Faraday(Environment):
-    def __init__(self, length: float, radius: float, x: float = 0.0, y: float = 0.0, z: float = 0.0):
-        super().__init__(x, y, z)
-
-        self._l = length
-        self._r = radius
-
-    @property
-    def length(self) -> float:
-        return self._l
-    
-    @length.setter
-    def length(self, new: float) -> None:
-        if new <= 0:
-            return
-        
-        self._l = new
-
-    @property
-    def radius(self) -> float:
-        return self._r
-    
-    @radius.setter
-    def radius(self, new: float) -> None:
-        if new <= 0:
-            return
-        
-        self._r = new
-
-    def draw(self, axis: Axes, plane: str = 'xy') -> None:
-        if plane == 'xy':
-            pass
-
-        if plane == 'xz':
-            pass
 
 
 if __name__ == '__main__':
