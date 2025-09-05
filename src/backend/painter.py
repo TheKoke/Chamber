@@ -66,6 +66,25 @@ class Painter:
 
         self.axis.plot([coordinates[0][0], coordinates[0][-1]], [coordinates[1][0], coordinates[1][-1]], color='red', label='optic scatter')
         self.axis.plot([coordinates[0][1], coordinates[0][-2]], [coordinates[1][1], coordinates[1][-2]], color='red')
+    
+    def draw_collimator_optics(self) -> None:
+        if self.current_plane == 'xy':
+            coordinates = self.model.collimator_optics('xy')
+
+        if self.current_plane == 'xz':
+            coordinates = self.model.collimator_optics('xz')
+
+        self.axis.scatter(coordinates[0], coordinates[1], color='black')
+        
+        self.axis.plot([coordinates[0][0], coordinates[0][-1], coordinates[1][0], coordinates[1][-1]], color='red', label='optics scatter')
+        self.axis.plot([coordinates[0][1], coordinates[0][-2]], [coordinates[1][1], coordinates[1][-2]], color='red')
+
+    def draw_telescope_optics(self) -> None:
+        if self.current_plane == 'xy':
+            coordinates = self.model.telescope_optics('xy')
+
+        if self.current_plane == 'xz':
+            coordinates = self.model.telescope_optics('xz')
 
     def draw_reflections(self) -> None:
         if self.current_plane == 'xy':
@@ -96,7 +115,4 @@ class Painter:
 
 
 if __name__ == '__main__':
-    # x0, y0 = self.model.target.x_position, self.model.target.y_position
-    # radii = self.model.detector.x_position - self.model.target.x_position
-    # self.axis.add_patch(Arc((x0, y0), 2 * radii, 2 * radii, theta1=-180, theta2=180, linestyle='-.'))
     pass

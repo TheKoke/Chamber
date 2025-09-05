@@ -2,9 +2,10 @@ from __future__ import annotations
 
 
 class Tube:
-    def __init__(self, first: Collimator, second: Collimator) -> None:
+    def __init__(self, first: Collimator, second: Collimator, theta: float = 0.0) -> None:
         self._f = first
         self._s = second
+        self._theta = theta
 
     @property
     def first_collimator(self) -> Collimator:
@@ -15,12 +16,25 @@ class Tube:
         return self._s
     
     @property
+    def theta(self) -> float:
+        return self._theta
+    
+    @property
     def length(self) -> float:
         xs = (self._s.x_position - self._f.x_position)**2
         ys = (self._s.y_position - self._f.y_position)**2
         zs = (self._s.z_position - self._f.z_position)**2
         return (xs + ys + zs) ** (1/2)
     
+    def x_positions(self) -> list[float]:
+        return [self._f.x_position, self._s.x_position]
+    
+    def y_positions(self) -> list[float]:
+        return [self._f.y_position, self._s.y_position]
+
+    def z_positions(self) -> list[float]:
+        return [self._f.z_position, self._s.z_position]    
+
 
 class CollimationTube(Tube):
     def __init__(self, first: Collimator, second: Collimator) -> None:
