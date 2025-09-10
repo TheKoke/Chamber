@@ -51,7 +51,7 @@ class SpotModel:
         if dy == 0:
             return 90
 
-        return 90 + numpy.arctan(dz / dy) * 180 / numpy.pi
+        return 90 + numpy.rad2deg(numpy.arctan(dz / dy))
 
     def calculate_width(self) -> float:
         r1 = self.model.first_collimator.radius

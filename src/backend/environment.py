@@ -1,4 +1,5 @@
 from __future__ import annotations
+import numpy
 
 
 class Tube:
@@ -33,7 +34,20 @@ class Tube:
         return [self._f.y_position, self._s.y_position]
 
     def z_positions(self) -> list[float]:
-        return [self._f.z_position, self._s.z_position]    
+        return [self._f.z_position, self._s.z_position]
+    
+    def rotate(self, dtheta: float) -> None:
+        if (self._theta + dtheta) < 0 or (self._theta + dtheta) > 180:
+            return
+
+        self._theta += dtheta
+
+        for c in [self._f, self._s]:
+            dx = c.x_position * (numpy.cos(numpy.radians(self._theta)) - 1) - c.y_position * numpy.sin(numpy.radians(self._theta))
+            dy = c.x_position * numpy.sin(numpy.radians(self._theta)) + c.y_position * (numpy.cos(numpy.raians(self._theta)) - 1)
+            dz = 0
+
+            c.move(dx, dy, dz)
 
 
 class CollimationTube(Tube):
@@ -42,13 +56,12 @@ class CollimationTube(Tube):
 
 
 class Telescope(Tube):
-    def __init__(self, first: Collimator, second: Collimator, detector: Detector) -> None:
+    def __init__(self, first: Collimator, second: Collimator) -> None:
         super().__init__(first, second)
-        self._d = detector
     
     @property
-    def detector(self) -> Detector:
-        return self._d
+    def detector_position(self) -> tuple[float, float, float]:
+        return (self._s.x_position, self._s.y_position, self._s.z_position)
 
 
 class Environment:

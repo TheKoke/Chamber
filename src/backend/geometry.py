@@ -3,7 +3,8 @@ from backend.environment import *
 
 
 class Chamber:
-    def __init__(self, ctube: CollimationTube, trgt: Target, telescopes: list[Telescope]) -> None:
+    def __init__(self, radius: float, ctube: CollimationTube, trgt: Target, telescopes: list[Telescope]) -> None:
+        self.__radius = radius
         self.__ctube = ctube
         self.__target = trgt
         self.__telescopes = telescopes
@@ -11,6 +12,10 @@ class Chamber:
         detectors = [telescopes[i].detector for i in range(len(telescopes))]
         self.__pivots: list[Environment] = [self.__ctube.first_collimator, self.__ctube.second_collimator, self.__target, *detectors]
 
+    @property
+    def radius(self) -> float:
+        return self.__radius
+    
     @property
     def target(self) -> Target:
         return self.__target
@@ -34,25 +39,18 @@ class Optics:
     
     def get_coefficients(self, plane: str = "xy") -> tuple[numpy.ndarray, numpy.ndarray]:
         if plane == "xy":
-            theta_rad = self.__tube.theta * numpy.pi / 180
             r1, r2 = self.__tube.first_collimator.radius, self.__tube.second_collimator.radius
             x1, x2 = self.__tube.first_collimator.x_position, self.__tube.second_collimator.x_position
             y1, y2 = self.__tube.first_collimator.y_position, self.__tube.second_collimator.y_position
 
-            xcenter1 = x1 * numpy.cos(theta_rad) - y1 * numpy.sin(theta_rad)
-            ycenter1 = x1 * numpy.sin(theta_rad) + y1 * numpy.cos(theta_rad)
-
-            xcenter2 = x2 * numpy.cos(theta_rad) - y2 * numpy.sin(theta_rad)
-            ycenter2 = x2 * numpy.sin(theta_rad) + y2 * numpy.cos(theta_rad)
-
-            x1 = xcenter1 + r1 * numpy.sin(theta_rad) / 2
-            x2 = xcenter2 - r2 * numpy.sin(theta_rad) / 2
-            y1 = ycenter1 + r1 * numpy.cos(theta_rad) / 2
-            y2 = ycenter2 - r2 * numpy.cos(theta_rad) / 2
+            x1 += r1 * numpy.sin(numpy.radians(self.__tube.theta)) / 2
+            x2 -= r2 * numpy.sin(numpy.radians(self.__tube.theta)) / 2
+            y1 += r1 * numpy.cos(numpy.radians(self.__tube.theta)) / 2
+            y2 -= r2 * numpy.cos(numpy.radians(self.__tube.theta)) / 2
 
         if plane == "xz":
             x1, x2 = self.__tube.first_collimator.x_position, self.__tube.second_collimator.x_position
-            y1, y2 = self.__tube.first_collimator.y_position, self.__tube.second_collimator.y_position
+            y1, y2 = self.__tube.first_collimator.z_position, self.__tube.second_collimator.z_position
 
         first_coeffs = numpy.linalg.solve(numpy.array([[x1, 1], [x2, 1]]), numpy.array([y1, y2]))
         return first_coeffs, -first_coeffs
@@ -107,16 +105,33 @@ class Geometry:
     def telescope_optics(self, plane: str) -> list[list[list[float]]]:
         result = []
 
-        for i in range(len(self.__chamber.telescopes)):
-            tele_optics = Optics(self.__chamber.telescopes[i])
+        for telescope in self.__chamber.telescopes:
+            dx, dy, dz = telescope.detector_position
+
+            tele_optics = Optics(telescope)
             first_coeffs, second_coeffs = tele_optics.get_coefficients(plane)
 
-            xs = self.__chamber.telescopes[i].x_positions()
-            ys = []
+            eq_coeffs1 = [1 + first_coeffs[0]**2, 2 * first_coeffs[0] * first_coeffs[1], first_coeffs[1]**2 - self.__chamber.radius**2]
+            eq_coeffs2 = [1 + second_coeffs[0]**2, 2 * second_coeffs[0] * second_coeffs[1], second_coeffs[1]**2 - self.__chamber.radius**2]
 
-            for j in range(len(xs)):
-                ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
-                ys.append(second_coeffs[0] * xs[i] + second_coeffs[1])
+            x_lim1 = numpy.roots(eq_coeffs1)
+            y_lim1 = first_coeffs[0] * x_lim1 + first_coeffs[1]
+
+            x_lim2 = numpy.roots(eq_coeffs2)
+            y_lim2 = second_coeffs[0] * x_lim2 + second_coeffs[1]
+
+            true_x1 = x_lim1[numpy.sqrt((x_lim1 - dx)**2 + (y_lim1 - dy)**2).argmax()]
+            true_y1 = y_lim1[numpy.sqrt((x_lim1 - dx)**2 + (y_lim1 - dy)**2).argmax()]
+
+            true_x2 = x_lim2[numpy.sqrt((x_lim2 - dx)**2 + (y_lim2 - dy)**2).argmax()]
+            true_y2 = y_lim2[numpy.sqrt((x_lim2 - dx)**2 + (y_lim2 - dy)**2).argmax()]
+
+            xs = [*telescope.x_positions(), *telescope.x_positions(), true_x1, true_x2]
+            ys = [true_y1, true_y2]
+
+            for i in range(0, 2 * len(telescope.x_positions())):
+                ys.insert(0, first_coeffs[0] * xs[i] + first_coeffs[1])
+                ys.insert(0, second_coeffs[0] * xs[i] + second_coeffs[1])
             
             result.append([xs, ys])
 
