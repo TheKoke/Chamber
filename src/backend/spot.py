@@ -14,7 +14,7 @@ class SpotModel:
     def draw(self) -> None:
         w, h = self.calculate_width(), self.calculate_height()
         ang = self.calculate_angle()
-        target = self.model.target
+        target = self.model.chamber.target
 
         self.axis.add_patch(Rectangle(
             (-target.width / 2, -target.height / 2), 
@@ -40,12 +40,12 @@ class SpotModel:
         self.axis.legend()
 
     def calculate_angle(self) -> float:
-        y1 = self.model.first_collimator.y_position
-        y2 = self.model.last_collimator.y_position
+        y1 = self.model.chamber.ctube.first_collimator.y_position
+        y2 = self.model.chamber.ctube.second_collimator.y_position
         dy = y2 - y1
 
-        z1 = self.model.first_collimator.z_position
-        z2 = self.model.last_collimator.z_position
+        z1 = self.model.chamber.ctube.first_collimator.z_position
+        z2 = self.model.chamber.ctube.second_collimator.z_position
         dz = z2 - z1
 
         if dy == 0:
@@ -54,43 +54,43 @@ class SpotModel:
         return 90 + numpy.rad2deg(numpy.arctan(dz / dy))
 
     def calculate_width(self) -> float:
-        r1 = self.model.first_collimator.radius
-        r2 = self.model.last_collimator.radius
+        d1 = self.model.chamber.ctube.first_collimator.diameter
+        d2 = self.model.chamber.ctube.second_collimator.diameter
 
-        y1 = self.model.first_collimator.y_position
-        y2 = self.model.last_collimator.y_position
+        y1 = self.model.chamber.ctube.first_collimator.y_position
+        y2 = self.model.chamber.ctube.second_collimator.y_position
         dy = abs(y2 - y1)
 
-        z1 = self.model.first_collimator.z_position
-        z2 = self.model.last_collimator.z_position
+        z1 = self.model.chamber.ctube.first_collimator.z_position
+        z2 = self.model.chamber.ctube.second_collimator.z_position
         dz = abs(z2 - z1)
 
-        xn = self.model.spot_on_target() / self.model.last_collimator.radius
+        xn = self.model.spot_on_target() / self.model.chamber.ctube.second_collimator.diameter
         distance = numpy.sqrt(dy ** 2 + dz ** 2)
 
-        return xn * (r1 + r2 - distance) / 2
+        return xn * (d1 + d2 - distance) / 2
 
     def calculate_height(self) -> float:
-        r1 = self.model.first_collimator.radius
-        r2 = self.model.last_collimator.radius
+        d1 = self.model.chamber.ctube.first_collimator.diameter
+        d2 = self.model.chamber.ctube.second_collimator.diameter
 
-        y1 = self.model.first_collimator.y_position
-        y2 = self.model.last_collimator.y_position
+        y1 = self.model.chamber.ctube.first_collimator.y_position
+        y2 = self.model.chamber.ctube.second_collimator.y_position
         dy = abs(y2 - y1)
 
-        z1 = self.model.first_collimator.z_position
-        z2 = self.model.last_collimator.z_position
+        z1 = self.model.chamber.ctube.first_collimator.z_position
+        z2 = self.model.chamber.ctube.second_collimator.z_position
         dz = abs(z2 - z1)
 
         distance = numpy.sqrt(dy ** 2 + dz ** 2)
-        s = (r1 + r2 + distance) / 2
+        s = (d1 + d2 + distance) / 2
 
-        xn = self.model.spot_on_target() / self.model.last_collimator.radius
+        xn = self.model.spot_on_target() / self.model.chamber.ctube.second_collimator.diameter
 
         if distance == 0:
-            return xn * (r1 + r2 - distance) / 2
+            return xn * (d1 + d2 - distance) / 2
         
-        return 2 * xn * numpy.sqrt(s * (s - r1) * (s - r2) * (s - distance)) / distance
+        return 2 * xn * numpy.sqrt(s * (s - d1) * (s - d2) * (s - distance)) / distance
 
 
 if __name__ == '__main__':
