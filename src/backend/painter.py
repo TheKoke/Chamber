@@ -1,4 +1,5 @@
 from backend.geometry import Geometry
+from backend.environment import Collimator, Target, Telescope
 
 from matplotlib.axes import Axes
 from matplotlib.patches import Rectangle, Arc
@@ -7,7 +8,7 @@ from matplotlib.patches import Rectangle, Arc
 SCOPING = 10
 
 
-class Painter:
+class FullPainter:
     def __init__(self, axis: Axes, model: Geometry) -> None:
         self.axis = axis
         self.model = model
@@ -78,6 +79,89 @@ class Painter:
 
     def add_pointer(self, x: float) -> None:
         pass
+
+class DetailedPainter:
+    def __init__(self, axis: Axes, first: Collimator, second: Collimator, target: Target, telescope: Telescope) -> None:
+        self.axis = axis
+        self.first = first
+        self.second = second
+        self.target = target
+        self.telescope = telescope
+
+        self.current_plane = None
+        self.is_optics_enable = True
+        self.is_reflections_enable = False
+
+    def draw(self, plane: str) -> None:
+        if plane.lower() not in ['xy', 'xz', 'yz'] or plane is None:
+            plane = 'xy'
+
+        self.current_plane = plane
+
+        self.axis.clear()
+
+        self.draw_environment()
+
+        xmin, xmax = self.axis.get_xlim()
+        self.axis.plot([xmin, xmax], [0, 0], '--', color='red', label='beam line')
+
+        if self.is_optics_enable:
+            self.draw_optics()
+
+        if self.is_reflections_enable:
+            self.draw_reflections()
+
+    def draw_environment(self) -> None:
+        # first collimator
+        self.first.draw(self.axis, self.current_plane)
+
+        # second collimator
+        self.second.draw(self.axis, self.current_plane)
+
+        # target
+        self.target.draw(self.axis, self.current_plane)
+
+        # telescope
+        self.telescope.draw(self.axis, self.current_plane)
+
+    def draw_optics(self) -> None:
+        if self.current_plane == 'xy':
+            coordinates = self.model.xy_plane()
+
+        if self.current_plane == 'xz':
+            coordinates = self.model.xz_plane()
+
+        if self.current_plane == 'yz':
+            coordinates = self.model.yz_plane()
+
+        self.axis.scatter(coordinates[0], coordinates[1], color='black')
+
+        self.axis.plot([coordinates[0][0], coordinates[0][-1]], [coordinates[1][0], coordinates[1][-1]], color='red', label='optic scatter')
+        self.axis.plot([coordinates[0][1], coordinates[0][-2]], [coordinates[1][1], coordinates[1][-2]], color='red')
+
+    def draw_reflections(self) -> None:
+        if self.current_plane == 'xy':
+            reflections = self.model.xy_reflections()
+
+        if self.current_plane == 'xz':
+            reflections = self.model.xz_reflections()
+
+        if self.current_plane == 'yz':
+            reflections = self.model.yz_reflections()
+
+        for refl in reflections[:-1]:
+            xs, ys = refl
+            self.axis.plot(xs, ys, color='green')
+
+        self.axis.plot(reflections[-1][0], reflections[-1][1], color='green', label='reflections')
+
+    def switch_enable_optics(self) -> None:
+        self.is_optics_enable = not self.is_optics_enable
+        self.draw(self.current_plane)
+
+    def switch_enable_reflections(self) -> None:
+        self.is_reflections_enable = not self.is_reflections_enable
+        self.draw(self.current_plane)
 
 
 if __name__ == '__main__':
