@@ -109,6 +109,41 @@ class Geometry:
             result.append([xs, ys])
 
         return result
+    
+    def reflections(self, plane: str) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
+        lines = 10
+
+        c1 = self.chamber.ctube.first_collimator
+        c2 = self.chamber.ctube.second_collimator
+
+        starting_x = c1.x_position
+
+        starting_ceil_y = c1.y_position + c1.radius / 2
+        starting_floor_y = c1.y_position - c1.radius / 2
+
+        reflecting_xs = numpy.linspace(c2.x_position, c2.x_position + c2.thickness * 10, lines)
+
+        reflecting_floor_ys = (c2.y_position - c2.radius / 2) * numpy.ones_like(reflecting_xs)
+        reflecting_ceil_ys = (c2.y_position + c2.radius / 2) * numpy.ones_like(reflecting_xs)
+
+        stopping_x = self._detector.x_position
+
+        reflections = []
+        for i in range(lines):
+            reflections.extend(self.__reflections_by(
+                (starting_x, starting_ceil_y),
+                (reflecting_xs[i], reflecting_floor_ys[i]),
+                stopping_x
+            ))
+
+        for i in range(lines):
+            reflections.extend(self.__reflections_by(
+                (starting_x, starting_floor_y),
+                (reflecting_xs[i], reflecting_ceil_ys[i]),
+                stopping_x
+            ))
+
+        return reflections
 
 
 if __name__ == '__main__':

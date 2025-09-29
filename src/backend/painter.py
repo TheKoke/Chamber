@@ -1,5 +1,5 @@
-from backend.geometry import Geometry
-from backend.environment import Collimator, Target, Telescope
+from backend.geometry import Geometry, Optics
+from backend.environment import Collimator, Target, Telescope, CollimationTube
 
 from matplotlib.axes import Axes
 from matplotlib.patches import Rectangle, Arc
@@ -51,11 +51,7 @@ class FullPainter:
             t.draw(self.axis, self.current_plane)
 
     def draw_collimator_optics(self) -> None:
-        if self.current_plane == 'xy':
-            coordinates = self.model.collimator_optics('xy')
-
-        if self.current_plane == 'xz':
-            coordinates = self.model.collimator_optics('xz')
+        coordinates = self.model.collimator_optics('xy')
 
         self.axis.scatter(coordinates[0], coordinates[1], color='black')
         
@@ -63,11 +59,7 @@ class FullPainter:
         self.axis.plot([coordinates[0][1], coordinates[0][-2]], [coordinates[1][1], coordinates[1][-2]], color='red')
 
     def draw_telescope_optics(self) -> None:
-        if self.current_plane == 'xy':
-            coordinates = self.model.telescope_optics('xy')
-
-        if self.current_plane == 'xz':
-            coordinates = self.model.telescope_optics('xz')
+        coordinates = self.model.telescope_optics('xy')
 
     def switch_optics(self) -> None:
         self.is_optics_enable = not self.is_optics_enable
@@ -81,12 +73,13 @@ class FullPainter:
         pass
 
 class DetailedPainter:
-    def __init__(self, axis: Axes, first: Collimator, second: Collimator, target: Target, telescope: Telescope) -> None:
+    def __init__(self, axis: Axes, first: Collimator, second: Collimator, target: Target, telescope: Telescope, optics: Optics) -> None:
         self.axis = axis
         self.first = first
         self.second = second
         self.target = target
         self.telescope = telescope
+        self.optics = optics
 
         self.current_plane = None
         self.is_optics_enable = True
@@ -112,27 +105,41 @@ class DetailedPainter:
             self.draw_reflections()
 
     def draw_environment(self) -> None:
-        # first collimator
         self.first.draw(self.axis, self.current_plane)
-
-        # second collimator
         self.second.draw(self.axis, self.current_plane)
-
-        # target
         self.target.draw(self.axis, self.current_plane)
-
-        # telescope
         self.telescope.draw(self.axis, self.current_plane)
 
     def draw_optics(self) -> None:
         if self.current_plane == 'xy':
-            coordinates = self.model.xy_plane()
+            ctube = CollimationTube(self.first, self.second)
+
+            ctube_optics = Optics(ctube)
+            first_coeffs, second_coeffs = ctube_optics.get_coefficients('xy')
+
+            xs = ctube.x_positions()
+            ys = []
+
+            for i in range(len(xs)):
+                ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
+                ys.append(second_coeffs[0] * xs[i] + second_coeffs[1]) 
+            
+            coordinates = [xs, ys]
 
         if self.current_plane == 'xz':
-            coordinates = self.model.xz_plane()
+            ctube = CollimationTube(self.first, self.second)
 
-        if self.current_plane == 'yz':
-            coordinates = self.model.yz_plane()
+            ctube_optics = Optics(ctube)
+            first_coeffs, second_coeffs = ctube_optics.get_coefficients('xz')
+
+            xs = ctube.x_positions()
+            ys = []
+
+            for i in range(len(xs)):
+                ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
+                ys.append(second_coeffs[0] * xs[i] + second_coeffs[1]) 
+            
+            coordinates = [xs, ys]
 
         self.axis.scatter(coordinates[0], coordinates[1], color='black')
 
