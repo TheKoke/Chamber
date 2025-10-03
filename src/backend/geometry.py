@@ -1,118 +1,58 @@
 import numpy
 from backend.environment import *
 
-class Chamber:
-    def __init__(self, trgt: Target, ctube: CollimationTube, telescopes: list[Telescope]) -> None:
-        self.__target = trgt
-        self.__ctube = ctube
-        self.__telescopes = telescopes
+
+class Optics:
+    def __init__(self, tube: Tube) -> None:
+        self.__tube = tube
 
     @property
-    def target(self) -> Target:
-        return self.__target
+    def tube(self) -> Tube:
+        return self.__tube
     
-    @property
-    def ctube(self) -> CollimationTube:
-        return self.__ctube
-    
-    @property
-    def telescopes(self) -> list[Telescope]:
-        return self.__telescopes
+    def get_coefficients(self, plane: str = "xy") -> tuple[numpy.ndarray, numpy.ndarray]:
+        if plane == "xy":
+            diam1, diam2 = self.__tube.first_collimator.diameter, self.__tube.second_collimator.diameter
+            x1, x2 = self.__tube.first_collimator.x_position, self.__tube.second_collimator.x_position
+            y1, y2 = self.__tube.first_collimator.y_position, self.__tube.second_collimator.y_position
 
+            x1 += diam1 * numpy.sin(numpy.radians(self.__tube.theta)) / 2
+            x2 -= diam2 * numpy.sin(numpy.radians(self.__tube.theta)) / 2
+            y1 += diam1 * numpy.cos(numpy.radians(self.__tube.theta)) / 2
+            y2 -= diam2 * numpy.cos(numpy.radians(self.__tube.theta)) / 2
 
-class Geometry:
-    def __init__(self, collimators: list[Collimator], target: Target, detector: Detector) -> None:
-        self._collimators = collimators
-        self._first_collimator = collimators[0]
-        self._last_collimator = collimators[-1]
-        self._target = target
-        self._detector = detector
+        if plane == "xz":
+            x1, x2 = self.__tube.first_collimator.x_position, self.__tube.second_collimator.x_position
+            y1, y2 = self.__tube.first_collimator.z_position, self.__tube.second_collimator.z_position
 
-        self._pivots: list[Environment] = [collimators[0], collimators[-1], target, detector]
-        self._environments: list[Environment] = [*collimators, target, detector]
+        first_coeffs = numpy.linalg.solve(numpy.array([[x1, 1], [x2, 1]]), numpy.array([y1, y2]))
+        return first_coeffs, -first_coeffs
+ 
 
-    @property
-    def collimators(self) -> list[Collimator]:
-        return self._collimators.copy()
+class Reflections:
+    def __init__(self, first: Collimator, second: Collimator, target: Target, telescope: Telescope):
+        self.__first = first
+        self.__second = second
+        self.__target = target
+        self.__telescope = telescope
 
-    @property
-    def first_collimator(self) -> Collimator:
-        return self._first_collimator
-    
-    @property
-    def last_collimator(self) -> Collimator:
-        return self._last_collimator
-    
-    @property
-    def target(self) -> Target:
-        return self._target
-    
-    @property
-    def detector(self) -> Detector:
-        return self._detector
-
-    @staticmethod
-    def projection_formula(d1: float, h1: float, d2: float) -> float:
-        return h1 * (d2 / d1)
-    
-    def spot_at_distance(self, distance: float) -> float:
-        h1 = self._first_collimator.radius
-        h2 = self._last_collimator.radius
-        
-        crossing_h = self._last_collimator.x_position - h1 * self._last_collimator.x_position / (h1 + h2)
-        d1 = self._last_collimator.x_position - crossing_h
-
-        return Geometry.projection_formula(d1, h2, distance - crossing_h)
-    
-    def spot_on_target(self) -> float:
-        return self.spot_at_distance(self._target.x_position)
-
-    def spot_on_detector(self) -> float:
-        return self.spot_at_distance(self._detector.x_position)
-    
-    def angle_resolution(self) -> float:
-        angle_scale = 360 / (2 * numpy.pi * (self._detector.x_position - self._target.x_position))
-        return angle_scale * self.spot_on_detector() / 2
-
-    def xy_optics(self) -> list[list[float]]:
-        xs = []
-        for i in range(len(self._pivots)):
-            xs.append(self._pivots[i].x_position)
-            xs.append(self._pivots[i].x_position)
-
-        ys = [
-            self._first_collimator.radius / 2 + self._first_collimator.y_position,
-            -self._first_collimator.radius / 2 + self._first_collimator.y_position,
-            self._last_collimator.radius / 2 + self._last_collimator.y_position, 
-            -self._last_collimator.radius / 2 + self._last_collimator.y_position,
-        ]
-
-        first_coeffs = numpy.linalg.solve(numpy.array([[xs[0], 1], [xs[2], 1]]), numpy.array([ys[0], ys[3]]))
-        second_coeffs = numpy.linalg.solve(numpy.array([[xs[1], 1], [xs[3], 1]]), numpy.array([ys[1], ys[2]]))
-
-        for i in range(2, len(self._pivots)):
-            ys.append(second_coeffs[0] * self._pivots[i].x_position + second_coeffs[1])
-            ys.append(first_coeffs[0] * self._pivots[i].x_position + first_coeffs[1])
-
-        return [xs, ys]
-    
-    def xy_reflections(self) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
+    def get_coefficients(self, plane: str) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
         lines = 10
 
-        c1 = self._first_collimator
-        c2 = self._last_collimator
+        c1 = self.__first
+        c2 = self.__second
 
         starting_x = c1.x_position
 
-        starting_ceil_y = c1.y_position + c1.radius / 2
-        starting_floor_y = c1.y_position - c1.radius / 2
+        starting_ceil_y = c1.y_position + c1.diameter / 2
+        starting_floor_y = c1.y_position - c1.diameter / 2
 
-        reflecting_xs = numpy.linspace(c2.x_position, c2.x_position + c2.thickness * 10, lines)
+        reflecting_xs = numpy.linspace(c2.x_position, c2.x_position + c2.thickness, lines) # numpy.linspace(0, 1, 10) => [0.0, 0.1, 0.2, 0.3,...,1.0]
 
-        reflecting_floor_ys = (c2.y_position - c2.radius / 2) * numpy.ones_like(reflecting_xs)
-        reflecting_ceil_ys = (c2.y_position + c2.radius / 2) * numpy.ones_like(reflecting_xs)
+        reflecting_floor_ys = (c2.y_position - c2.diameter / 2) * numpy.ones_like(reflecting_xs)
+        reflecting_ceil_ys = (c2.y_position + c2.diameter / 2) * numpy.ones_like(reflecting_xs)
 
-        stopping_x = self._detector.x_position
+        stopping_x = self.__telescope.detector_position[0]
 
         reflections = []
         for i in range(lines):
@@ -127,120 +67,6 @@ class Geometry:
                 (starting_x, starting_floor_y),
                 (reflecting_xs[i], reflecting_ceil_ys[i]),
                 stopping_x
-            ))
-
-        return reflections
-    
-    def xz_optics(self) -> list[list[float]]:
-        xs = []
-        for i in range(len(self._pivots)):
-            xs.append(self._pivots[i].x_position)
-            xs.append(self._pivots[i].x_position)
-
-        zs = [
-            self._first_collimator.radius / 2 + self._first_collimator.z_position,
-            -self._first_collimator.radius / 2 + self._first_collimator.z_position,
-            self._last_collimator.radius / 2 + self._last_collimator.z_position, 
-            -self._last_collimator.radius / 2 + self._last_collimator.z_position,
-        ]
-
-        first_coeffs = numpy.linalg.solve(numpy.array([[xs[0], 1], [xs[2], 1]]), numpy.array([zs[0], zs[3]]))
-        second_coeffs = numpy.linalg.solve(numpy.array([[xs[1], 1], [xs[3], 1]]), numpy.array([zs[1], zs[2]]))
-
-        for i in range(2, len(self._pivots)):
-            zs.append(second_coeffs[0] * self._pivots[i].x_position + second_coeffs[1])
-            zs.append(first_coeffs[0] * self._pivots[i].x_position + first_coeffs[1])
-
-        return [xs, zs]
-    
-    def xz_reflections(self) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
-        lines = 10
-
-        c1 = self._first_collimator
-        c2 = self._last_collimator
-
-        starting_x = c1.x_position
-
-        starting_ceil_z = c1.z_position + c1.radius / 2
-        starting_floor_z = c1.z_position - c1.radius / 2
-
-        reflecting_xs = numpy.linspace(c2.x_position, c2.x_position + c2.thickness * 10, lines)
-
-        reflecting_floor_zs = (c2.z_position - c2.radius / 2) * numpy.ones_like(reflecting_xs)
-        reflecting_ceil_zs = (c2.z_position + c2.radius / 2) * numpy.ones_like(reflecting_xs)
-
-        stopping_x = self._detector.x_position
-
-        reflections = []
-        for i in range(lines):
-            reflections.extend(self.__reflections_by(
-                (starting_x, starting_ceil_z),
-                (reflecting_xs[i], reflecting_floor_zs[i]),
-                stopping_x
-            ))
-
-        for i in range(lines):
-            reflections.extend(self.__reflections_by(
-                (starting_x, starting_floor_z),
-                (reflecting_xs[i], reflecting_ceil_zs[i]),
-                stopping_x
-            ))
-
-        return reflections
-    
-    def yz_optics(self) -> None:
-        ys = []
-        for i in range(len(self._pivots)):
-            ys.append(self._pivots[i].y_position)
-            ys.append(self._pivots[i].y_position)
-
-        zs = [
-            self._first_collimator.radius / 2 + self._first_collimator.z_position,
-            -self._first_collimator.radius / 2 + self._first_collimator.z_position,
-            self._last_collimator.radius / 2 + self._last_collimator.z_position, 
-            -self._last_collimator.radius / 2 + self._last_collimator.z_position,
-        ]
-
-        first_coeffs = numpy.linalg.solve(numpy.array([[ys[0], 1], [ys[2], 1]]), numpy.array([zs[0], zs[3]]))
-        second_coeffs = numpy.linalg.solve(numpy.array([[ys[1], 1], [ys[3], 1]]), numpy.array([zs[1], zs[2]]))
-
-        for i in range(2, len(self._pivots)):
-            zs.append(second_coeffs[0] * self._pivots[i].y_position + second_coeffs[1])
-            zs.append(first_coeffs[0] * self._pivots[i].y_position + first_coeffs[1])
-
-        return [ys, zs]
-
-    def yz_reflections(self) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
-        lines = 10
-
-        c1 = self._first_collimator
-        c2 = self._last_collimator
-
-        starting_y = c1.y_position
-
-        starting_ceil_z = c1.z_position + c1.radius / 2
-        starting_floor_z = c1.z_position - c1.radius / 2
-
-        reflecting_ys = numpy.linspace(c2.y_position, c2.y_position + c2.thickness * 10, lines)
-
-        reflecting_floor_zs = (c2.z_position - c2.radius / 2) * numpy.ones_like(reflecting_ys)
-        reflecting_ceil_zs = (c2.z_position + c2.radius / 2) * numpy.ones_like(reflecting_ys)
-
-        stopping_y = self._detector.y_position
-
-        reflections = []
-        for i in range(lines):
-            reflections.extend(self.__reflections_by(
-                (starting_y, starting_ceil_z[i]),
-                (reflecting_ys[i], reflecting_floor_zs[i]),
-                stopping_y
-            ))
-
-        for i in range(lines):
-            reflections.extend(self.__reflections_by(
-                (starting_y, starting_floor_z[i]),
-                (reflecting_ys[i], reflecting_ceil_zs[i]),
-                stopping_y
             ))
 
         return reflections
@@ -260,10 +86,91 @@ class Geometry:
         outgoing_xs = numpy.array([reflect_x, stop_x])
 
         ingoing_ys = coeffs[0] * ingoing_xs + coeffs[1]
-        outgoing_ys = -coeffs[0] * outgoing_xs + coeffs[0] * reflect_x + reflect_y
+        outgoing_ys = -coeffs[0] * outgoing_xs - coeffs[1]
 
         return [(ingoing_xs, ingoing_ys), (outgoing_xs, outgoing_ys)]
 
 
+class Geometry:
+    def __init__(self, chamber: Chamber) -> None:
+        self.__chamber = chamber
+
+    @property
+    def chamber(self) -> Chamber:
+        return self.__chamber
+
+    @staticmethod
+    def projection_formula(d1: float, h1: float, d2: float) -> float:
+        return h1 * (d2 / d1)
+    
+    def spot_at_distance(self, distance: float) -> float:
+        h1 = self.__chamber.ctube.first_collimator.diameter
+        h2 = self.__chamber.ctube.second_collimator.diameter
+        
+        crossing_h = self.__chamber.ctube.second_collimator.x_position - h1 * self.__chamber.ctube.second_collimator.x_position / (h1 + h2)
+        d1 = self.__chamber.ctube.second_collimator.x_position - crossing_h
+
+        return Geometry.projection_formula(d1, h2, distance - crossing_h)
+    
+    def spot_on_target(self) -> float:
+        return self.spot_at_distance(self.__chamber.target.x_position)
+
+    def spot_on_detector(self) -> float:
+        return self.spot_at_distance(self.__chamber.telescopes[i].detector_position[0] for i in range(len(self.__chamber.telescopes)))
+    
+    def angle_resolution(self) -> float:
+        for i in range(len(self.__chamber.telescopes)):
+            angle_scale = 360 / (2 * numpy.pi * (self.__chamber.telescopes[i].detector_position[0] - self.__chamber.target.x_position))
+
+        return angle_scale * self.spot_on_detector() / 2
+    
+    def collimator_optics(self) -> list[list[float]]:
+        ctube_optics = Optics(self.__chamber.ctube)
+        first_coeffs, second_coeffs = ctube_optics.get_coefficients()
+
+        xs = self.__chamber.ctube.x_positions()
+        ys = []
+
+        for i in range(len(xs)):
+            ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
+            ys.append(second_coeffs[0] * xs[i] + second_coeffs[1])
+        
+        return [xs, ys]
+
+    def telescope_optics(self) -> list[list[list[float]]]:
+        result = []
+
+        for telescope in self.__chamber.telescopes:
+            dx, dy, dz = telescope.detector_position
+
+            tele_optics = Optics(telescope)
+            first_coeffs, second_coeffs = tele_optics.get_coefficients()
+
+            eq_coeffs1 = [1 + first_coeffs[0]**2, 2 * first_coeffs[0] * first_coeffs[1], first_coeffs[1]**2 - self.__chamber.diameter**2]
+            eq_coeffs2 = [1 + second_coeffs[0]**2, 2 * second_coeffs[0] * second_coeffs[1], second_coeffs[1]**2 - self.__chamber.diameter**2]
+
+            x_lim1 = numpy.roots(eq_coeffs1)
+            y_lim1 = first_coeffs[0] * x_lim1 + first_coeffs[1]
+
+            x_lim2 = numpy.roots(eq_coeffs2)
+            y_lim2 = second_coeffs[0] * x_lim2 + second_coeffs[1]
+
+            true_x1 = x_lim1[numpy.sqrt((x_lim1 - dx)**2 + (y_lim1 - dy)**2).argmax()]
+            true_y1 = y_lim1[numpy.sqrt((x_lim1 - dx)**2 + (y_lim1 - dy)**2).argmax()]
+
+            true_x2 = x_lim2[numpy.sqrt((x_lim2 - dx)**2 + (y_lim2 - dy)**2).argmax()]
+            true_y2 = y_lim2[numpy.sqrt((x_lim2 - dx)**2 + (y_lim2 - dy)**2).argmax()]
+
+            xs = [*telescope.x_positions(), *telescope.x_positions(), true_x1, true_x2]
+            ys = [true_y1, true_y2]
+
+            for i in range(0, 2 * len(telescope.x_positions())):
+                ys.insert(0, first_coeffs[0] * xs[i] + first_coeffs[1])
+                ys.insert(0, second_coeffs[0] * xs[i] + second_coeffs[1])
+            
+            result.append([xs, ys])
+
+        return result
+    
 if __name__ == '__main__':
     pass

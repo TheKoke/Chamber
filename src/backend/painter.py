@@ -1,25 +1,89 @@
-from backend.geometry import Geometry
-
 from matplotlib.axes import Axes
-from matplotlib.patches import Rectangle, Arc
+from backend.geometry import Geometry, Optics, Reflections
+from backend.environment import Collimator, Target, Telescope, CollimationTube
 
 
-SCOPING = 10
-
-
-class Painter:
+class FullPainter:
     def __init__(self, axis: Axes, model: Geometry) -> None:
         self.axis = axis
         self.model = model
 
         self.current_plane = None
-        self.is_optics_enable = False
-        self.is_reflections_enable = False
+        self.is_collimator_optics_enable = False
+        self.is_telescope_optics_enable = False
 
         self.draw(self.current_plane)
 
     def draw(self, plane: str) -> None:
         if plane is None or plane.lower() not in ['xy', 'xz']:
+            plane = 'xy'
+
+        self.current_plane = plane
+
+        self.axis.clear()
+
+        self.draw_environment()
+
+        xmin, xmax = self.axis.get_xlim()
+        self.axis.plot([xmin, xmax], [0, 0], '--', color='red', label='beam line')
+
+        if self.is_collimator_optics_enable:
+            self.draw_collimator_optics()
+
+        if self.is_telescope_optics_enable:
+            self.draw_telescope_optics()
+
+        self.axis.set_title(f'{self.current_plane.upper()} Plane View of Chamber')
+        self.axis.grid()
+        self.axis.legend()
+
+    def draw_environment(self) -> None:
+        self.model.chamber.ctube.draw(self.axis, self.current_plane)
+        self.model.chamber.target.draw(self.axis, self.current_plane)
+        
+        for t in self.model.chamber.telescopes:
+            t.draw(self.axis, self.current_plane)
+
+    def draw_collimator_optics(self) -> None:
+        coordinates = self.model.collimator_optics('xy')
+
+        self.axis.scatter(coordinates[0], coordinates[1], color='black')
+        
+        self.axis.plot([coordinates[0][0], coordinates[0][-1]], [coordinates[1][0], coordinates[1][-1]], color='red', label='collim. scatter')
+        self.axis.plot([coordinates[0][1], coordinates[0][-2]], [coordinates[1][1], coordinates[1][-2]], color='red')
+
+    def draw_telescope_optics(self) -> None:
+        coordinates = self.model.telescope_optics('xy')
+
+        self.axis.scatter(coordinates[0], coordinates[1], color='blue')
+        
+        self.axis.plot([coordinates[0][0], coordinates[0][-1]], [coordinates[1][0], coordinates[1][-1]], color='purple', label='telesc. scatter')
+        self.axis.plot([coordinates[0][1], coordinates[0][-2]], [coordinates[1][1], coordinates[1][-2]], color='purple')
+
+    def switch_optics(self) -> None:
+        self.is_optics_enable = not self.is_optics_enable
+        self.draw(self.current_plane)
+
+    def add_pointer(self, x: float) -> None:
+        pass
+
+
+class DetailedPainter:
+    def __init__(self, axis: Axes, first: Collimator, second: Collimator, target: Target, telescope: Telescope) -> None:
+        self.axis = axis
+        self.first = first
+        self.second = second
+        self.target = target
+        self.telescope = telescope
+        self.optics = Optics(CollimationTube(first, second))
+        self.reflections = Reflections(first, second, target, telescope)
+
+        self.current_plane = None
+        self.is_optics_enable = True
+        self.is_reflections_enable = False
+
+    def draw(self, plane: str) -> None:
+        if plane.lower() not in ['xy', 'xz', 'yz'] or plane is None:
             plane = 'xy'
 
         self.current_plane = plane
@@ -37,30 +101,27 @@ class Painter:
         if self.is_reflections_enable:
             self.draw_reflections()
 
-        self.axis.set_title(f'{self.current_plane.upper()} Plane View of Chamber')
-        self.axis.grid()
-        self.axis.legend()
-
     def draw_environment(self) -> None:
-        # first collimator
-        for c in self.model.collimators:
-            c.draw(self.axis, self.current_plane)
-
-        # target
-        self.model.target.draw(self.axis, self.current_plane)
-
-        # detector
-        self.model.detector.draw(self.axis, self.current_plane)
+        self.first.draw(self.axis, self.current_plane)
+        self.second.draw(self.axis, self.current_plane)
+        self.target.draw(self.axis, self.current_plane)
+        self.telescope.draw(self.axis, self.current_plane)
 
     def draw_optics(self) -> None:
         if self.current_plane == 'xy':
-            coordinates = self.model.xy_optics()
+            first_coeffs, second_coeffs = self.optics.get_coefficients('xy')
 
         if self.current_plane == 'xz':
-            coordinates = self.model.xz_optics()
+            first_coeffs, second_coeffs = self.optics.get_coefficients('xz')
 
-        if self.current_plane == 'yz':
-            coordinates = self.model.yz_optics()
+        xs = self.optics.tube.x_positions()
+        ys = []
+
+        for i in range(len(xs)):
+            ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
+            ys.append(second_coeffs[0] * xs[i] + second_coeffs[1]) 
+        
+        coordinates = [xs, ys]
 
         self.axis.scatter(coordinates[0], coordinates[1], color='black')
 
@@ -69,13 +130,10 @@ class Painter:
 
     def draw_reflections(self) -> None:
         if self.current_plane == 'xy':
-            reflections = self.model.xy_reflections()
+            reflections = self.reflections.get_coefficients('xy')
 
         if self.current_plane == 'xz':
-            reflections = self.model.xz_reflections()
-
-        if self.current_plane == 'yz':
-            reflections = self.model.yz_reflections()
+            reflections = self.reflections.get_coefficients('xz')
 
         for refl in reflections[:-1]:
             xs, ys = refl
@@ -83,20 +141,14 @@ class Painter:
 
         self.axis.plot(reflections[-1][0], reflections[-1][1], color='green', label='reflections')
 
-    def switch_optics(self) -> None:
+    def switch_enable_optics(self) -> None:
         self.is_optics_enable = not self.is_optics_enable
         self.draw(self.current_plane)
 
-    def switch_reflections(self) -> None:
+    def switch_enable_reflections(self) -> None:
         self.is_reflections_enable = not self.is_reflections_enable
         self.draw(self.current_plane)
 
-    def add_pointer(self, x: float) -> None:
-        pass
-
 
 if __name__ == '__main__':
-    # x0, y0 = self.model.target.x_position, self.model.target.y_position
-    # radii = self.model.detector.x_position - self.model.target.x_position
-    # self.axis.add_patch(Arc((x0, y0), 2 * radii, 2 * radii, theta1=-180, theta2=180, linestyle='-.'))
     pass
