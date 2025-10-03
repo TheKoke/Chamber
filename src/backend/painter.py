@@ -1,11 +1,6 @@
-from backend.geometry import Geometry, Optics
-from backend.environment import Collimator, Target, Telescope, CollimationTube
-
 from matplotlib.axes import Axes
-from matplotlib.patches import Rectangle, Arc
-
-
-SCOPING = 10
+from backend.geometry import Geometry, Optics, Reflections
+from backend.environment import Collimator, Target, Telescope, CollimationTube
 
 
 class FullPainter:
@@ -16,7 +11,6 @@ class FullPainter:
         self.current_plane = None
         self.is_collimator_optics_enable = False
         self.is_telescope_optics_enable = False
-        self.is_reflections_enable = False
 
         self.draw(self.current_plane)
 
@@ -55,31 +49,34 @@ class FullPainter:
 
         self.axis.scatter(coordinates[0], coordinates[1], color='black')
         
-        self.axis.plot([coordinates[0][0], coordinates[0][-1], coordinates[1][0], coordinates[1][-1]], color='red', label='optics scatter')
+        self.axis.plot([coordinates[0][0], coordinates[0][-1]], [coordinates[1][0], coordinates[1][-1]], color='red', label='collim. scatter')
         self.axis.plot([coordinates[0][1], coordinates[0][-2]], [coordinates[1][1], coordinates[1][-2]], color='red')
 
     def draw_telescope_optics(self) -> None:
         coordinates = self.model.telescope_optics('xy')
 
+        self.axis.scatter(coordinates[0], coordinates[1], color='blue')
+        
+        self.axis.plot([coordinates[0][0], coordinates[0][-1]], [coordinates[1][0], coordinates[1][-1]], color='purple', label='telesc. scatter')
+        self.axis.plot([coordinates[0][1], coordinates[0][-2]], [coordinates[1][1], coordinates[1][-2]], color='purple')
+
     def switch_optics(self) -> None:
         self.is_optics_enable = not self.is_optics_enable
-        self.draw(self.current_plane)
-
-    def switch_reflections(self) -> None:
-        self.is_reflections_enable = not self.is_reflections_enable
         self.draw(self.current_plane)
 
     def add_pointer(self, x: float) -> None:
         pass
 
+
 class DetailedPainter:
-    def __init__(self, axis: Axes, first: Collimator, second: Collimator, target: Target, telescope: Telescope, optics: Optics) -> None:
+    def __init__(self, axis: Axes, first: Collimator, second: Collimator, target: Target, telescope: Telescope) -> None:
         self.axis = axis
         self.first = first
         self.second = second
         self.target = target
         self.telescope = telescope
-        self.optics = optics
+        self.optics = Optics(CollimationTube(first, second))
+        self.reflections = Reflections(first, second, target, telescope)
 
         self.current_plane = None
         self.is_optics_enable = True
@@ -112,34 +109,19 @@ class DetailedPainter:
 
     def draw_optics(self) -> None:
         if self.current_plane == 'xy':
-            ctube = CollimationTube(self.first, self.second)
-
-            ctube_optics = Optics(ctube)
-            first_coeffs, second_coeffs = ctube_optics.get_coefficients('xy')
-
-            xs = ctube.x_positions()
-            ys = []
-
-            for i in range(len(xs)):
-                ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
-                ys.append(second_coeffs[0] * xs[i] + second_coeffs[1]) 
-            
-            coordinates = [xs, ys]
+            first_coeffs, second_coeffs = self.optics.get_coefficients('xy')
 
         if self.current_plane == 'xz':
-            ctube = CollimationTube(self.first, self.second)
+            first_coeffs, second_coeffs = self.optics.get_coefficients('xz')
 
-            ctube_optics = Optics(ctube)
-            first_coeffs, second_coeffs = ctube_optics.get_coefficients('xz')
+        xs = self.optics.tube.x_positions()
+        ys = []
 
-            xs = ctube.x_positions()
-            ys = []
-
-            for i in range(len(xs)):
-                ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
-                ys.append(second_coeffs[0] * xs[i] + second_coeffs[1]) 
-            
-            coordinates = [xs, ys]
+        for i in range(len(xs)):
+            ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
+            ys.append(second_coeffs[0] * xs[i] + second_coeffs[1]) 
+        
+        coordinates = [xs, ys]
 
         self.axis.scatter(coordinates[0], coordinates[1], color='black')
 
@@ -148,13 +130,10 @@ class DetailedPainter:
 
     def draw_reflections(self) -> None:
         if self.current_plane == 'xy':
-            reflections = self.model.xy_reflections()
+            reflections = self.reflections.get_coefficients('xy')
 
         if self.current_plane == 'xz':
-            reflections = self.model.xz_reflections()
-
-        if self.current_plane == 'yz':
-            reflections = self.model.yz_reflections()
+            reflections = self.reflections.get_coefficients('xz')
 
         for refl in reflections[:-1]:
             xs, ys = refl

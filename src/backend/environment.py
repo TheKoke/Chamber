@@ -154,7 +154,6 @@ class Telescope(Tube):
             axis.add_patch(Rectangle((detector_x, detector_z), detector_width, detector_height, color="blue", label='detector'))
 
 
-
 class Environment:
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
         self._x = x

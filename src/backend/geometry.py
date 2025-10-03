@@ -29,6 +29,68 @@ class Optics:
         return first_coeffs, -first_coeffs
  
 
+class Reflections:
+    def __init__(self, first: Collimator, second: Collimator, target: Target, telescope: Telescope):
+        self.__first = first
+        self.__second = second
+        self.__target = target
+        self.__telescope = telescope
+
+    def get_coefficients(self, plane: str) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
+        lines = 10
+
+        c1 = self.__first
+        c2 = self.__second
+
+        starting_x = c1.x_position
+
+        starting_ceil_y = c1.y_position + c1.diameter / 2
+        starting_floor_y = c1.y_position - c1.diameter / 2
+
+        reflecting_xs = numpy.linspace(c2.x_position, c2.x_position + c2.thickness, lines) # numpy.linspace(0, 1, 10) => [0.0, 0.1, 0.2, 0.3,...,1.0]
+
+        reflecting_floor_ys = (c2.y_position - c2.diameter / 2) * numpy.ones_like(reflecting_xs)
+        reflecting_ceil_ys = (c2.y_position + c2.diameter / 2) * numpy.ones_like(reflecting_xs)
+
+        stopping_x = self.__telescope.detector_position[0]
+
+        reflections = []
+        for i in range(lines):
+            reflections.extend(self.__reflections_by(
+                (starting_x, starting_ceil_y),
+                (reflecting_xs[i], reflecting_floor_ys[i]),
+                stopping_x
+            ))
+
+        for i in range(lines):
+            reflections.extend(self.__reflections_by(
+                (starting_x, starting_floor_y),
+                (reflecting_xs[i], reflecting_ceil_ys[i]),
+                stopping_x
+            ))
+
+        return reflections
+
+    def __reflections_by(self, 
+                         start: tuple[float, float], 
+                         reflect: tuple[float, float], 
+                         stop_x: float) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
+        start_x, start_y = start
+        reflect_x, reflect_y = reflect
+
+        systematrix = numpy.array([[start_x, 1], [reflect_x, 1]])
+        right_hand = numpy.array([start_y, reflect_y])
+        coeffs = numpy.linalg.solve(systematrix, right_hand)
+
+        ingoing_xs = numpy.array([start_x, reflect_x])
+        outgoing_xs = numpy.array([reflect_x, stop_x])
+
+        ingoing_ys = coeffs[0] * ingoing_xs + coeffs[1]
+        outgoing_ys = -coeffs[0] * outgoing_xs - coeffs[1]
+
+        return [(ingoing_xs, ingoing_ys), (outgoing_xs, outgoing_ys)]
+
+
 class Geometry:
     def __init__(self, chamber: Chamber) -> None:
         self.__chamber = chamber
@@ -62,9 +124,9 @@ class Geometry:
 
         return angle_scale * self.spot_on_detector() / 2
     
-    def collimator_optics(self, plane: str) -> list[list[float]]:
+    def collimator_optics(self) -> list[list[float]]:
         ctube_optics = Optics(self.__chamber.ctube)
-        first_coeffs, second_coeffs = ctube_optics.get_coefficients(plane)
+        first_coeffs, second_coeffs = ctube_optics.get_coefficients()
 
         xs = self.__chamber.ctube.x_positions()
         ys = []
@@ -75,14 +137,14 @@ class Geometry:
         
         return [xs, ys]
 
-    def telescope_optics(self, plane: str) -> list[list[list[float]]]:
+    def telescope_optics(self) -> list[list[list[float]]]:
         result = []
 
         for telescope in self.__chamber.telescopes:
             dx, dy, dz = telescope.detector_position
 
             tele_optics = Optics(telescope)
-            first_coeffs, second_coeffs = tele_optics.get_coefficients(plane)
+            first_coeffs, second_coeffs = tele_optics.get_coefficients()
 
             eq_coeffs1 = [1 + first_coeffs[0]**2, 2 * first_coeffs[0] * first_coeffs[1], first_coeffs[1]**2 - self.__chamber.diameter**2]
             eq_coeffs2 = [1 + second_coeffs[0]**2, 2 * second_coeffs[0] * second_coeffs[1], second_coeffs[1]**2 - self.__chamber.diameter**2]
@@ -110,41 +172,5 @@ class Geometry:
 
         return result
     
-    def reflections(self, plane: str) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
-        lines = 10
-
-        c1 = self.chamber.ctube.first_collimator
-        c2 = self.chamber.ctube.second_collimator
-
-        starting_x = c1.x_position
-
-        starting_ceil_y = c1.y_position + c1.radius / 2
-        starting_floor_y = c1.y_position - c1.radius / 2
-
-        reflecting_xs = numpy.linspace(c2.x_position, c2.x_position + c2.thickness * 10, lines)
-
-        reflecting_floor_ys = (c2.y_position - c2.radius / 2) * numpy.ones_like(reflecting_xs)
-        reflecting_ceil_ys = (c2.y_position + c2.radius / 2) * numpy.ones_like(reflecting_xs)
-
-        stopping_x = self._detector.x_position
-
-        reflections = []
-        for i in range(lines):
-            reflections.extend(self.__reflections_by(
-                (starting_x, starting_ceil_y),
-                (reflecting_xs[i], reflecting_floor_ys[i]),
-                stopping_x
-            ))
-
-        for i in range(lines):
-            reflections.extend(self.__reflections_by(
-                (starting_x, starting_floor_y),
-                (reflecting_xs[i], reflecting_ceil_ys[i]),
-                stopping_x
-            ))
-
-        return reflections
-
-
 if __name__ == '__main__':
     pass
