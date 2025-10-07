@@ -8,18 +8,12 @@ class FullPainter:
         self.axis = axis
         self.model = model
 
-        self.current_plane = None
         self.is_collimator_optics_enable = False
         self.is_telescope_optics_enable = False
 
-        self.draw(self.current_plane)
+        self.draw()
 
-    def draw(self, plane: str) -> None:
-        if plane is None or plane.lower() not in ['xy', 'xz']:
-            plane = 'xy'
-
-        self.current_plane = plane
-
+    def draw(self) -> None:
         self.axis.clear()
 
         self.draw_environment()
@@ -33,16 +27,18 @@ class FullPainter:
         if self.is_telescope_optics_enable:
             self.draw_telescope_optics()
 
-        self.axis.set_title(f'{self.current_plane.upper()} Plane View of Chamber')
+        self.axis.set_title(f'Full View of Chamber')
+        self.axis.set_aspect('equal')
         self.axis.grid()
         self.axis.legend()
 
     def draw_environment(self) -> None:
-        self.model.chamber.ctube.draw(self.axis, self.current_plane)
-        self.model.chamber.target.draw(self.axis, self.current_plane)
+        self.model.chamber.draw(self.axis)
+        self.model.chamber.ctube.draw(self.axis, 'xy')
+        self.model.chamber.target.draw(self.axis, 'xy')
         
         for t in self.model.chamber.telescopes:
-            t.draw(self.axis, self.current_plane)
+            t.draw(self.axis, 'xy')
 
     def draw_collimator_optics(self) -> None:
         coordinates = self.model.collimator_optics('xy')
@@ -62,7 +58,7 @@ class FullPainter:
 
     def switch_optics(self) -> None:
         self.is_optics_enable = not self.is_optics_enable
-        self.draw(self.current_plane)
+        self.draw()
 
     def add_pointer(self, x: float) -> None:
         pass
