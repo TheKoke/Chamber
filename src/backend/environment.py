@@ -230,13 +230,13 @@ class Collimator(Environment):
             x1 -= 0.5 * self.height * numpy.sin(numpy.radians(theta))
             y1 -= 0.5 * self.height * numpy.cos(numpy.radians(theta)) 
             axis.add_patch(Rectangle(
-                (x1, y1), self._t, self.height / 2 - self._d / 2, angle=theta, rotation_point='center', color='black'
+                (x1, y1), self._t, self.height / 2 - self._d / 2, angle=theta, rotation_point='xy', color='black'
             ))
 
             x2 += 0.5 * self.diameter * numpy.sin(numpy.radians(theta))
             y2 += 0.5 * self.diameter * numpy.cos(numpy.radians(theta))
             axis.add_patch(Rectangle(
-                (x2, y2), self._t, self.height / 2 - self._d / 2, angle=theta, rotation_point='center', color='black'
+                (x2, y2), self._t, self.height / 2 - self._d / 2, angle=theta, rotation_point='xy', color='black'
             ))
 
         if plane == 'xz':
