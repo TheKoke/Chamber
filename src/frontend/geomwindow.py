@@ -1,9 +1,9 @@
-from backend.painter import Painter
+from backend.painter import DetailedPainter
 from backend.geometry import Geometry
 
 from frontend.spotwindow import SpotWindow
 from frontend.targetwindow import TargetWindow
-from frontend.detectorwindow import DetectorWindow
+# from frontend.detectorwindow import DetectorWindow
 from frontend.collimatorwindow import CollimatorWindow
 
 from PyQt5.QtGui import QFont, QIcon
@@ -135,14 +135,14 @@ class GeomWindow(QMainWindow, Ui_GeomWindow):
 
         # model, painter and pointer
         self.model = model
-        self.paint = Painter(self.axes, model)
+        self.paint = DetailedPainter(self.axes, model)
         self.pointer = None
 
         # event handling
         self.collimator1_button.clicked.connect(self.open_first_collimator)
         self.collimator2_button.clicked.connect(self.open_last_collimator)
         self.target_button.clicked.connect(self.open_target)
-        self.detector_button.clicked.connect(self.open_detector)
+        # self.detector_button.clicked.connect(self.open_detector)
         self.optics_button.clicked.connect(self.switch_optics)
         self.reflections_button.clicked.connect(self.switch_reflections)
         self.spot_button.clicked.connect(self.look_at_spot)
@@ -199,7 +199,7 @@ class GeomWindow(QMainWindow, Ui_GeomWindow):
         self._window.show()
 
     def open_detector(self) -> None:
-        self._window = DetectorWindow(self.model.detector)
+        # self._window = DetectorWindow(self.model.detector)
         self._window.okbutton.buttons()[0].clicked.connect(self.refresh)
         self._window.show()
 

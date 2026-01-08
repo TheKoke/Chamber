@@ -1,5 +1,5 @@
 from backend.geometry import Geometry
-from backend.environment import Collimator, Detector, Target
+from backend.environment import Collimator, Target
 
 
 def starting_position() -> Geometry:
@@ -20,9 +20,9 @@ def starting_position() -> Geometry:
 
     target = Target(15.0, 15.0, x=1320.0)
 
-    detector = Detector(x=1540.0)
+    # detector = Detector(x=1540.0)
 
-    geometry = Geometry([first_collimator, second_collimator], target, detector)
+    geometry = Geometry([first_collimator, second_collimator], target)
     return geometry
 
 

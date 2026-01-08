@@ -1,12 +1,11 @@
 import sys
 
 from PyQt5.QtWidgets import QApplication
-from frontend.geomwindow import GeomWindow
-from backend.start import starting_position
+from frontend.startwindow import StartWindow
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    w = GeomWindow(starting_position())
+    w = StartWindow()
     w.show()
     app.exec()
