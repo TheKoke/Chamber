@@ -24,6 +24,7 @@ if __name__ == '__main__':
         [285.756, 170.0],
         [320.087, -90.0]
     ]
+
     f = Collimator(3.0, 2.0, x=-1368.0)
     s = Collimator(3.0, 2.0, x=-767.0)
     t_f1 = Collimator(5.5, 1.0, x=80.0)
@@ -41,5 +42,7 @@ if __name__ == '__main__':
     ch = Chamber(665.0, back, c, t, teles)
     geom = Geometry(ch)
 
-    p = FullPainter(ax, geom)
+    p = ScaledPainter(ax, geom)
+    p.is_telescope_optics_enable = True
+    p.draw()
     plt.show()

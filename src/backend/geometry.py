@@ -16,10 +16,10 @@ class Optics:
             x1, x2 = self.__tube.first_collimator.x_position, self.__tube.second_collimator.x_position
             y1, y2 = self.__tube.first_collimator.y_position, self.__tube.second_collimator.y_position
 
-            x1 += diam1 * numpy.sin(numpy.radians(self.__tube.theta)) / 2
-            x2 -= diam2 * numpy.sin(numpy.radians(self.__tube.theta)) / 2
-            y1 += diam1 * numpy.cos(numpy.radians(self.__tube.theta)) / 2
-            y2 -= diam2 * numpy.cos(numpy.radians(self.__tube.theta)) / 2
+            # x1 += diam1 / 2 * numpy.sin(numpy.radians(self.__tube.theta)) / 2
+            # x2 -= diam2 / 2 * numpy.sin(numpy.radians(self.__tube.theta)) / 2
+            y1 += diam1 / 2 # * numpy.cos(numpy.radians(self.__tube.theta)) / 2
+            y2 -= diam2 / 2 # * numpy.cos(numpy.radians(self.__tube.theta)) / 2
 
         if plane == "xz":
             x1, x2 = self.__tube.first_collimator.x_position, self.__tube.second_collimator.x_position
@@ -135,7 +135,7 @@ class Geometry:
             ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
             ys.append(second_coeffs[0] * xs[i] + second_coeffs[1])
         
-        return [xs, ys]
+        return [xs * 2, ys]
 
     def telescope_optics(self) -> list[list[list[float]]]:
         result = []
@@ -146,8 +146,8 @@ class Geometry:
             tele_optics = Optics(telescope)
             first_coeffs, second_coeffs = tele_optics.get_coefficients()
 
-            eq_coeffs1 = [1 + first_coeffs[0]**2, 2 * first_coeffs[0] * first_coeffs[1], first_coeffs[1]**2 - self.__chamber.diameter**2]
-            eq_coeffs2 = [1 + second_coeffs[0]**2, 2 * second_coeffs[0] * second_coeffs[1], second_coeffs[1]**2 - self.__chamber.diameter**2]
+            eq_coeffs1 = [1 + first_coeffs[0]**2, 2 * first_coeffs[0] * first_coeffs[1], first_coeffs[1]**2 - (self.__chamber.diameter / 2)**2]
+            eq_coeffs2 = [1 + second_coeffs[0]**2, 2 * second_coeffs[0] * second_coeffs[1], second_coeffs[1]**2 - (self.__chamber.diameter / 2)**2]
 
             x_lim1 = numpy.roots(eq_coeffs1)
             y_lim1 = first_coeffs[0] * x_lim1 + first_coeffs[1]
@@ -164,7 +164,7 @@ class Geometry:
             xs = [*telescope.x_positions(), *telescope.x_positions(), true_x1, true_x2]
             ys = [true_y1, true_y2]
 
-            for i in range(0, 2 * len(telescope.x_positions())):
+            for i in range(0, len(telescope.x_positions())):
                 ys.insert(0, first_coeffs[0] * xs[i] + first_coeffs[1])
                 ys.insert(0, second_coeffs[0] * xs[i] + second_coeffs[1])
             

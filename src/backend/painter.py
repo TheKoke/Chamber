@@ -3,7 +3,7 @@ from backend.geometry import Geometry, Optics, Reflections
 from backend.environment import Collimator, Target, Telescope, CollimationTube
 
 
-class FullPainter:
+class ScaledPainter:
     def __init__(self, axis: Axes, model: Geometry) -> None:
         self.axis = axis
         self.model = model
@@ -27,10 +27,29 @@ class FullPainter:
         if self.is_telescope_optics_enable:
             self.draw_telescope_optics()
 
+        handles, labels = self.clear_labels()
         self.axis.set_title(f'Full View of Chamber')
         self.axis.set_aspect('equal')
         self.axis.grid()
-        self.axis.legend()
+        self.axis.legend(handles, labels)
+
+    def clear_labels(self) -> tuple[list, list]:
+        handles, labels = self.axis.get_legend_handles_labels()
+
+        dups = []
+        for i in range(len(labels)):
+            if i in dups: continue
+            for j in range(len(labels)):
+                if i == j: continue
+                if labels[i] == labels[j]: dups.append(j)
+        
+        new_handles, new_labels = [], []
+        for i in range(len(labels)):
+            if i in dups: continue
+            new_handles.append(handles[i])
+            new_labels.append(labels[i])
+
+        return new_handles, new_labels
 
     def draw_environment(self) -> None:
         self.model.chamber.draw(self.axis)
@@ -41,20 +60,21 @@ class FullPainter:
             t.draw(self.axis, 'xy')
 
     def draw_collimator_optics(self) -> None:
-        coordinates = self.model.collimator_optics('xy')
+        coordinates = self.model.collimator_optics()
 
         self.axis.scatter(coordinates[0], coordinates[1], color='black')
         
-        self.axis.plot([coordinates[0][0], coordinates[0][-1]], [coordinates[1][0], coordinates[1][-1]], color='red', label='collim. scatter')
-        self.axis.plot([coordinates[0][1], coordinates[0][-2]], [coordinates[1][1], coordinates[1][-2]], color='red')
+        self.axis.plot([coordinates[0][0], coordinates[0][1]], [coordinates[1][0], coordinates[1][1]], color='red', label='collim. scatter')
+        self.axis.plot([coordinates[0][2], coordinates[0][3]], [coordinates[1][2], coordinates[1][3]], color='red')
 
     def draw_telescope_optics(self) -> None:
-        coordinates = self.model.telescope_optics('xy')
-
-        self.axis.scatter(coordinates[0], coordinates[1], color='blue')
+        coordinates = self.model.telescope_optics()
         
-        self.axis.plot([coordinates[0][0], coordinates[0][-1]], [coordinates[1][0], coordinates[1][-1]], color='purple', label='telesc. scatter')
-        self.axis.plot([coordinates[0][1], coordinates[0][-2]], [coordinates[1][1], coordinates[1][-2]], color='purple')
+        for i in range(len(self.model.chamber.telescopes)):
+            self.axis.scatter(coordinates[i][0], coordinates[i][1], color='purple')
+            
+            self.axis.plot([coordinates[i][0][0], coordinates[i][0][-1]], [coordinates[i][1][0], coordinates[i][1][-1]], color='purple', label='telesc. scatter')
+            self.axis.plot([coordinates[i][0][1], coordinates[i][0][-2]], [coordinates[i][1][1], coordinates[i][1][-2]], color='purple')
 
     def switch_optics(self) -> None:
         self.is_optics_enable = not self.is_optics_enable
@@ -64,7 +84,7 @@ class FullPainter:
         pass
 
 
-class DetailedPainter:
+class UnscaledPainter:
     def __init__(self, axis: Axes, first: Collimator, second: Collimator, target: Target, telescope: Telescope) -> None:
         self.axis = axis
         self.first = first

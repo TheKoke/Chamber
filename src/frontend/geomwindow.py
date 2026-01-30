@@ -1,4 +1,4 @@
-from backend.painter import DetailedPainter
+from backend.painter import UnscaledPainter
 from backend.geometry import Geometry
 
 from frontend.spotwindow import SpotWindow
@@ -135,7 +135,7 @@ class GeomWindow(QMainWindow, Ui_GeomWindow):
 
         # model, painter and pointer
         self.model = model
-        self.paint = DetailedPainter(self.axes, model)
+        self.paint = UnscaledPainter(self.axes, model)
         self.pointer = None
 
         # event handling

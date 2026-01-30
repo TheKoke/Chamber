@@ -33,10 +33,10 @@ class Chamber:
         return self.__telescopes
 
     def draw(self, axis: Axes) -> None:
-        vertices = self.polygon.separate(self.polygon.points, self.polygon.find_collisions(self.diameter))
+        vertices = self.polygon.separate(self.polygon.find_collisions(self.diameter))
 
         axis.add_patch(Circle((0.0, 0.0), self.diameter / 2, color='darkgray', label='chamber', fill=False, linewidth=2.5))
-        axis.add_patch(Polygon(vertices, closed=False, color='darkgray', fill=False, linewidth=2.5))
+        axis.add_patch(Polygon(vertices, closed=False, color='darkgray', label='chamber', fill=False, linewidth=2.5))
 
 
 class AdditionalVolume:
@@ -61,9 +61,9 @@ class AdditionalVolume:
 
         return collision_indexes
     
-    def separate(self, points: list[float], collision_indexes: list[int]) -> list[float]:
-        transformed_points = points.copy()
-        while not (transformed_points[0] == points[collision_indexes[0]] and transformed_points[-1] == points[collision_indexes[-1]]):
+    def separate(self, collision_indexes: list[int]) -> list[float]:
+        transformed_points = self.__points.copy()
+        while not (transformed_points[0] == self.__points[collision_indexes[0]] and transformed_points[-1] == self.__points[collision_indexes[-1]]):
             transformed_points = numpy.roll(transformed_points, shift=1, axis=0).tolist()
         
         return transformed_points
@@ -115,12 +115,12 @@ class Tube:
         self._theta += dtheta
         actual_theta = 360 - self._theta if self._is_clockwise else self._theta
 
-        for c in [self._f, self._s]:
-            dx = c.x_position * (numpy.cos(numpy.radians(actual_theta)) - 1) - c.y_position * numpy.sin(numpy.radians(actual_theta))
-            dy = c.x_position * numpy.sin(numpy.radians(actual_theta)) + c.y_position * (numpy.cos(numpy.radians(actual_theta)) - 1)
-            dz = 0
+        # for c in [self._f, self._s]:
+        #     dx = c.x_position * (numpy.cos(numpy.radians(actual_theta)) - 1) - c.y_position * numpy.sin(numpy.radians(actual_theta))
+        #     dy = c.x_position * numpy.sin(numpy.radians(actual_theta)) + c.y_position * (numpy.cos(numpy.radians(actual_theta)) - 1)
+        #     dz = 0
 
-            c.move(dx, dy, dz)
+        #     c.move(dx, dy, dz)
 
     def draw(self, axis: Axes, plane: str = 'xy') -> None:
         self._f.draw(axis, plane, theta=360 - self._theta if self._is_clockwise else self._theta)
@@ -150,16 +150,16 @@ class Telescope(Tube):
         detector_x, detector_y, detector_z = self.detector_position
 
         if plane == 'xy':
-            detector_x += numpy.cos(numpy.radians(self._theta)) * self._s.thickness + numpy.sin(numpy.radians(self._theta)) * 0.5 * detector_height
-            detector_y -= numpy.sin(numpy.radians(self._theta)) * self._s.thickness + numpy.cos(numpy.radians(self._theta)) * 0.5 * detector_height
+            detector_x += self._s.thickness # * numpy.cos(numpy.radians(self._theta)) + numpy.sin(numpy.radians(self._theta)) * 0.5 * detector_height
+            detector_y -= 0.5 * detector_height # * numpy.cos(numpy.radians(self._theta)) + numpy.sin(numpy.radians(self._theta)) * self._s.thickness 
 
             axis.add_patch(Rectangle(
                 (detector_x, detector_y), 
                 detector_width, 
                 detector_height, 
                 angle=360 - self._theta if self._is_clockwise else self._theta,
-                rotation_point='center', 
-                color="blue", 
+                rotation_point=(0.0, 0.0), 
+                color="blue",
                 label='detector'
             )) 
 
@@ -227,27 +227,27 @@ class Collimator(Environment):
         x2, y2, z2 = self._x, self._y, self._z
 
         if plane == 'xy':
-            x1 -= 0.5 * self.height * numpy.sin(numpy.radians(theta))
-            y1 -= 0.5 * self.height * numpy.cos(numpy.radians(theta)) 
+            # x1 -= 0.5 * self.height * numpy.sin(numpy.radians(theta))
+            y1 -= 0.5 * self.height # * numpy.cos(numpy.radians(theta)) 
             axis.add_patch(Rectangle(
-                (x1, y1), self._t, self.height / 2 - self._d / 2, angle=theta, rotation_point='xy', color='black'
+                (x1, y1), self._t, self.height / 2 - self._d / 2, angle=theta, rotation_point=(0.0, 0.0), color='black', label='collimator'
             ))
 
-            x2 += 0.5 * self.diameter * numpy.sin(numpy.radians(theta))
-            y2 += 0.5 * self.diameter * numpy.cos(numpy.radians(theta))
+            # x2 += 0.5 * self.diameter * numpy.sin(numpy.radians(theta))
+            y2 += 0.5 * self.diameter # * numpy.cos(numpy.radians(theta))
             axis.add_patch(Rectangle(
-                (x2, y2), self._t, self.height / 2 - self._d / 2, angle=theta, rotation_point='xy', color='black'
+                (x2, y2), self._t, self.height / 2 - self._d / 2, angle=theta, rotation_point=(0.0, 0.0), color='black', label='collimator'
             ))
 
         if plane == 'xz':
             z1 -= 0.5 * self.height
             axis.add_patch(Rectangle(
-                (x1, z1), self._t, self.height / 2 - self._d, color='black'
+                (x1, z1), self._t, self.height / 2 - self._d, color='black', label='collimator'
             ))
 
             z2 += 0.5 * self.diameter
             axis.add_patch(Rectangle(
-                (x2, z2), self._t, self.height / 2 - self._d, color='black'
+                (x2, z2), self._t, self.height / 2 - self._d, color='black', label='collimator'
             ))
     
 
