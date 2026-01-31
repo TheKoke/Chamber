@@ -16,10 +16,8 @@ class Optics:
             x1, x2 = self.__tube.first_collimator.x_position, self.__tube.second_collimator.x_position
             y1, y2 = self.__tube.first_collimator.y_position, self.__tube.second_collimator.y_position
 
-            # x1 += diam1 / 2 * numpy.sin(numpy.radians(self.__tube.theta)) / 2
-            # x2 -= diam2 / 2 * numpy.sin(numpy.radians(self.__tube.theta)) / 2
-            y1 += diam1 / 2 # * numpy.cos(numpy.radians(self.__tube.theta)) / 2
-            y2 -= diam2 / 2 # * numpy.cos(numpy.radians(self.__tube.theta)) / 2
+            y1 += diam1 / 2
+            y2 -= diam2 / 2
 
         if plane == "xz":
             x1, x2 = self.__tube.first_collimator.x_position, self.__tube.second_collimator.x_position
@@ -128,49 +126,67 @@ class Geometry:
         ctube_optics = Optics(self.__chamber.ctube)
         first_coeffs, second_coeffs = ctube_optics.get_coefficients()
 
-        xs = self.__chamber.ctube.x_positions()
+        xs = self.__double_coordinates([*self.__chamber.ctube.x_positions(), self.chamber.target.x_position])
         ys = []
 
-        for i in range(len(xs)):
+        for i in range(0, len(xs), 2):
             ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
             ys.append(second_coeffs[0] * xs[i] + second_coeffs[1])
         
-        return [xs * 2, ys]
+        return [xs, ys]
 
     def telescope_optics(self) -> list[list[list[float]]]:
         result = []
 
         for telescope in self.__chamber.telescopes:
-            dx, dy, dz = telescope.detector_position
-
             tele_optics = Optics(telescope)
             first_coeffs, second_coeffs = tele_optics.get_coefficients()
 
-            eq_coeffs1 = [1 + first_coeffs[0]**2, 2 * first_coeffs[0] * first_coeffs[1], first_coeffs[1]**2 - (self.__chamber.diameter / 2)**2]
-            eq_coeffs2 = [1 + second_coeffs[0]**2, 2 * second_coeffs[0] * second_coeffs[1], second_coeffs[1]**2 - (self.__chamber.diameter / 2)**2]
+            xs = [*self.__double_coordinates(telescope.x_positions())[::-1]]
+            ys = []
 
-            x_lim1 = numpy.roots(eq_coeffs1)
-            y_lim1 = first_coeffs[0] * x_lim1 + first_coeffs[1]
+            for i in range(0, len(xs), 2):
+                ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
+                ys.append(second_coeffs[0] * xs[i] + second_coeffs[1])
 
-            x_lim2 = numpy.roots(eq_coeffs2)
-            y_lim2 = second_coeffs[0] * x_lim2 + second_coeffs[1]
+            stops = self.find_stop_points(telescope, (first_coeffs, second_coeffs))
 
-            true_x1 = x_lim1[numpy.sqrt((x_lim1 - dx)**2 + (y_lim1 - dy)**2).argmax()]
-            true_y1 = y_lim1[numpy.sqrt((x_lim1 - dx)**2 + (y_lim1 - dy)**2).argmax()]
-
-            true_x2 = x_lim2[numpy.sqrt((x_lim2 - dx)**2 + (y_lim2 - dy)**2).argmax()]
-            true_y2 = y_lim2[numpy.sqrt((x_lim2 - dx)**2 + (y_lim2 - dy)**2).argmax()]
-
-            xs = [*telescope.x_positions(), *telescope.x_positions(), true_x1, true_x2]
-            ys = [true_y1, true_y2]
-
-            for i in range(0, len(telescope.x_positions())):
-                ys.insert(0, first_coeffs[0] * xs[i] + first_coeffs[1])
-                ys.insert(0, second_coeffs[0] * xs[i] + second_coeffs[1])
+            xs.extend(stops[0])
+            ys.extend(stops[1])
             
             result.append([xs, ys])
 
+        for slice in result:
+            print(slice)
         return result
+    
+    def find_stop_points(self, telescope: Telescope, line_coefficients: tuple[numpy.ndarray, numpy.ndarray]) -> list[list[float]]:
+        dx, dy, dz = telescope.detector_position
+        first, second = line_coefficients
+
+        eq_coeffs1 = [1 + first[0]**2, 2 * first[0] * first[1], first[1]**2 - (self.__chamber.diameter / 2)**2]
+        eq_coeffs2 = [1 + second[0]**2, 2 * second[0] * second[1], second[1]**2 - (self.__chamber.diameter / 2)**2]
+
+        x_lim1 = numpy.roots(eq_coeffs1)
+        y_lim1 = first[0] * x_lim1 + first[1]
+
+        x_lim2 = numpy.roots(eq_coeffs2)
+        y_lim2 = second[0] * x_lim2 + second[1]
+
+        true_x1 = x_lim1[numpy.sqrt((x_lim1 - dx)**2 + (y_lim1 - dy)**2).argmax()]
+        true_y1 = y_lim1[numpy.sqrt((x_lim1 - dx)**2 + (y_lim1 - dy)**2).argmax()]
+
+        true_x2 = x_lim2[numpy.sqrt((x_lim2 - dx)**2 + (y_lim2 - dy)**2).argmax()]
+        true_y2 = y_lim2[numpy.sqrt((x_lim2 - dx)**2 + (y_lim2 - dy)**2).argmax()]
+
+        return [[true_x1, true_x2], [true_y1, true_y2]]
+    
+    def __double_coordinates(self, dots: list[float]) -> list[float]:
+        new = []
+        for i in dots:
+            new.append(i)
+            new.append(i)
+        return new
     
 if __name__ == '__main__':
     pass

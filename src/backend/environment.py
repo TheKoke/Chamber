@@ -113,18 +113,12 @@ class Tube:
             return
 
         self._theta += dtheta
-        actual_theta = 360 - self._theta if self._is_clockwise else self._theta
-
-        # for c in [self._f, self._s]:
-        #     dx = c.x_position * (numpy.cos(numpy.radians(actual_theta)) - 1) - c.y_position * numpy.sin(numpy.radians(actual_theta))
-        #     dy = c.x_position * numpy.sin(numpy.radians(actual_theta)) + c.y_position * (numpy.cos(numpy.radians(actual_theta)) - 1)
-        #     dz = 0
-
-        #     c.move(dx, dy, dz)
+        self._theta %= 360
+        self._theta = 360 - self._theta if self._is_clockwise else self._theta
 
     def draw(self, axis: Axes, plane: str = 'xy') -> None:
-        self._f.draw(axis, plane, theta=360 - self._theta if self._is_clockwise else self._theta)
-        self._s.draw(axis, plane, theta=360 - self._theta if self._is_clockwise else self._theta)
+        self._f.draw(axis, plane, theta=self._theta if self._is_clockwise else self._theta)
+        self._s.draw(axis, plane, theta=self._theta if self._is_clockwise else self._theta)
 
 
 class CollimationTube(Tube):
@@ -150,14 +144,14 @@ class Telescope(Tube):
         detector_x, detector_y, detector_z = self.detector_position
 
         if plane == 'xy':
-            detector_x += self._s.thickness # * numpy.cos(numpy.radians(self._theta)) + numpy.sin(numpy.radians(self._theta)) * 0.5 * detector_height
-            detector_y -= 0.5 * detector_height # * numpy.cos(numpy.radians(self._theta)) + numpy.sin(numpy.radians(self._theta)) * self._s.thickness 
+            detector_x += self._s.thickness
+            detector_y -= 0.5 * detector_height
 
             axis.add_patch(Rectangle(
                 (detector_x, detector_y), 
                 detector_width, 
                 detector_height, 
-                angle=360 - self._theta if self._is_clockwise else self._theta,
+                angle=self._theta,
                 rotation_point=(0.0, 0.0), 
                 color="blue",
                 label='detector'
@@ -227,14 +221,12 @@ class Collimator(Environment):
         x2, y2, z2 = self._x, self._y, self._z
 
         if plane == 'xy':
-            # x1 -= 0.5 * self.height * numpy.sin(numpy.radians(theta))
-            y1 -= 0.5 * self.height # * numpy.cos(numpy.radians(theta)) 
+            y1 -= 0.5 * self.height 
             axis.add_patch(Rectangle(
                 (x1, y1), self._t, self.height / 2 - self._d / 2, angle=theta, rotation_point=(0.0, 0.0), color='black', label='collimator'
             ))
 
-            # x2 += 0.5 * self.diameter * numpy.sin(numpy.radians(theta))
-            y2 += 0.5 * self.diameter # * numpy.cos(numpy.radians(theta))
+            y2 += 0.5 * self.diameter
             axis.add_patch(Rectangle(
                 (x2, y2), self._t, self.height / 2 - self._d / 2, angle=theta, rotation_point=(0.0, 0.0), color='black', label='collimator'
             ))

@@ -1,4 +1,5 @@
 from matplotlib.axes import Axes
+from matplotlib.transforms import Affine2D
 from backend.geometry import Geometry, Optics, Reflections
 from backend.environment import Collimator, Target, Telescope, CollimationTube
 
@@ -10,6 +11,7 @@ class ScaledPainter:
 
         self.is_collimator_optics_enable = False
         self.is_telescope_optics_enable = False
+        self.is_labels_enable = False
 
         self.draw()
 
@@ -28,10 +30,10 @@ class ScaledPainter:
             self.draw_telescope_optics()
 
         handles, labels = self.clear_labels()
+        if self.is_labels_enable: self.axis.legend(handles, labels)
         self.axis.set_title(f'Full View of Chamber')
         self.axis.set_aspect('equal')
         self.axis.grid()
-        self.axis.legend(handles, labels)
 
     def clear_labels(self) -> tuple[list, list]:
         handles, labels = self.axis.get_legend_handles_labels()
@@ -64,20 +66,31 @@ class ScaledPainter:
 
         self.axis.scatter(coordinates[0], coordinates[1], color='black')
         
-        self.axis.plot([coordinates[0][0], coordinates[0][1]], [coordinates[1][0], coordinates[1][1]], color='red', label='collim. scatter')
-        self.axis.plot([coordinates[0][2], coordinates[0][3]], [coordinates[1][2], coordinates[1][3]], color='red')
+        self.axis.plot([coordinates[0][0], coordinates[0][-2]], [coordinates[1][0], coordinates[1][-2]], color='red', label='collim. scatter')
+        self.axis.plot([coordinates[0][1], coordinates[0][-1]], [coordinates[1][1], coordinates[1][-1]], color='red')
 
     def draw_telescope_optics(self) -> None:
         coordinates = self.model.telescope_optics()
         
         for i in range(len(self.model.chamber.telescopes)):
-            self.axis.scatter(coordinates[i][0], coordinates[i][1], color='purple')
-            
-            self.axis.plot([coordinates[i][0][0], coordinates[i][0][-1]], [coordinates[i][1][0], coordinates[i][1][-1]], color='purple', label='telesc. scatter')
-            self.axis.plot([coordinates[i][0][1], coordinates[i][0][-2]], [coordinates[i][1][1], coordinates[i][1][-2]], color='purple')
+            angle = self.model.chamber.telescopes[i].theta
+            transform = Affine2D().rotate_deg(angle) + self.axis.transData
 
-    def switch_optics(self) -> None:
-        self.is_optics_enable = not self.is_optics_enable
+            self.axis.scatter(coordinates[i][0], coordinates[i][1], transform=transform, color='blue')
+            
+            self.axis.plot([coordinates[i][0][0], coordinates[i][0][-2]], [coordinates[i][1][0], coordinates[i][1][-2]], transform=transform, color='blue', label='telesc. scatter')
+            self.axis.plot([coordinates[i][0][1], coordinates[i][0][-1]], [coordinates[i][1][1], coordinates[i][1][-1]], transform=transform, color='blue')
+
+    def switch_collimator_optics(self) -> None:
+        self.is_collimator_optics_enable = not self.is_collimator_optics_enable
+        self.draw()
+
+    def switch_telescope_optics(self) -> None:
+        self.is_telescope_optics_enable = not self.is_telescope_optics_enable
+        self.draw()
+
+    def switch_labels(self) -> None:
+        self.is_labels_enable = not self.is_labels_enable
         self.draw()
 
     def add_pointer(self, x: float) -> None:

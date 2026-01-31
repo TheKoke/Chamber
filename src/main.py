@@ -43,6 +43,6 @@ if __name__ == '__main__':
     geom = Geometry(ch)
 
     p = ScaledPainter(ax, geom)
-    p.is_telescope_optics_enable = True
-    p.draw()
+    p.switch_collimator_optics()
+    p.switch_telescope_optics()
     plt.show()
