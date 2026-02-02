@@ -108,12 +108,12 @@ class StartWindow(QWidget, Ui_StartWindow):
         self.unscale_button.clicked.connect(self.start_unscale)
 
     def start_full_scale(self) -> None:
-        self.geom_window = GeomWindow(starting_position(scaled=True))
+        self.geom_window = GeomWindow(starting_position())
         self.geom_window.show()
         self.close()
 
     def start_unscale(self) -> None:
-        self.geom_window = GeomWindow(starting_position(scaled=False))
+        self.geom_window = GeomWindow(starting_position())
         self.geom_window.show()
         self.close()
 

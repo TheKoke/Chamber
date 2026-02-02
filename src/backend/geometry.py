@@ -122,18 +122,25 @@ class Geometry:
 
         return angle_scale * self.spot_on_detector() / 2
     
-    def collimator_optics(self) -> list[list[float]]:
+    def collimator_optics(self, plane: str = 'xy') -> list[list[float]]:
         ctube_optics = Optics(self.__chamber.ctube)
-        first_coeffs, second_coeffs = ctube_optics.get_coefficients()
+        first_coeffs, second_coeffs = ctube_optics.get_coefficients(plane)
 
-        xs = self.__double_coordinates([*self.__chamber.ctube.x_positions(), self.chamber.target.x_position])
+        if plane == 'xy':
+            xs = self.__double_coordinates([*self.__chamber.ctube.x_positions(), self.chamber.target.x_position])
+
+        if plane == 'xz':
+            xs = self.__double_coordinates([*self.__chamber.ctube.y_positions(), self.chamber.target.y_position])
+
         ys = []
-
         for i in range(0, len(xs), 2):
             ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
             ys.append(second_coeffs[0] * xs[i] + second_coeffs[1])
         
         return [xs, ys]
+    
+    def collimator_reflections(self, plane: str = 'xy') -> list[tuple[numpy.ndarray, numpy.ndarray]]:
+        ctube_reflections = Reflections()
 
     def telescope_optics(self) -> list[list[list[float]]]:
         result = []
@@ -156,8 +163,6 @@ class Geometry:
             
             result.append([xs, ys])
 
-        for slice in result:
-            print(slice)
         return result
     
     def find_stop_points(self, telescope: Telescope, line_coefficients: tuple[numpy.ndarray, numpy.ndarray]) -> list[list[float]]:

@@ -18,7 +18,7 @@ class ScaledPainter:
     def draw(self) -> None:
         self.axis.clear()
 
-        self.draw_environment()
+        self.model.chamber.draw(self.axis)
 
         xmin, xmax = self.axis.get_xlim()
         self.axis.plot([xmin, xmax], [0, 0], '--', color='red', label='beam line')
@@ -52,14 +52,6 @@ class ScaledPainter:
             new_labels.append(labels[i])
 
         return new_handles, new_labels
-
-    def draw_environment(self) -> None:
-        self.model.chamber.draw(self.axis)
-        self.model.chamber.ctube.draw(self.axis, 'xy')
-        self.model.chamber.target.draw(self.axis, 'xy')
-        
-        for t in self.model.chamber.telescopes:
-            t.draw(self.axis, 'xy')
 
     def draw_collimator_optics(self) -> None:
         coordinates = self.model.collimator_optics()
@@ -98,20 +90,16 @@ class ScaledPainter:
 
 
 class UnscaledPainter:
-    def __init__(self, axis: Axes, first: Collimator, second: Collimator, target: Target, telescope: Telescope) -> None:
+    def __init__(self, axis: Axes, model: Geometry) -> None:
         self.axis = axis
-        self.first = first
-        self.second = second
-        self.target = target
-        self.telescope = telescope
-        self.optics = Optics(CollimationTube(first, second))
-        self.reflections = Reflections(first, second, target, telescope)
+        self.model = model
 
         self.current_plane = None
         self.is_optics_enable = True
         self.is_reflections_enable = False
+        self.draw()
 
-    def draw(self, plane: str) -> None:
+    def draw(self, plane: str = 'xy') -> None:
         if plane.lower() not in ['xy', 'xz', 'yz'] or plane is None:
             plane = 'xy'
 
@@ -130,51 +118,52 @@ class UnscaledPainter:
         if self.is_reflections_enable:
             self.draw_reflections()
 
+        self.axis.set_title(f'{self.current_plane.upper()} View of Chamber')
+        handles, labels = self.clear_labels()
+        self.axis.legend(handles, labels)
+        self.axis.grid()
+
+    def clear_labels(self) -> tuple[list, list]:
+        handles, labels = self.axis.get_legend_handles_labels()
+
+        dups = []
+        for i in range(len(labels)):
+            if i in dups: continue
+            for j in range(len(labels)):
+                if i == j: continue
+                if labels[i] == labels[j]: dups.append(j)
+        
+        new_handles, new_labels = [], []
+        for i in range(len(labels)):
+            if i in dups: continue
+            new_handles.append(handles[i])
+            new_labels.append(labels[i])
+
+        return new_handles, new_labels
+
     def draw_environment(self) -> None:
-        self.first.draw(self.axis, self.current_plane)
-        self.second.draw(self.axis, self.current_plane)
-        self.target.draw(self.axis, self.current_plane)
-        self.telescope.draw(self.axis, self.current_plane)
+        self.model.chamber.ctube.draw(self.axis, self.current_plane, no_rotation=True)
+        self.model.chamber.target.draw(self.axis, self.current_plane)
+        self.model.chamber.telescopes[0].draw(self.axis, self.current_plane, no_rotation=True)
 
     def draw_optics(self) -> None:
-        if self.current_plane == 'xy':
-            first_coeffs, second_coeffs = self.optics.get_coefficients('xy')
-
-        if self.current_plane == 'xz':
-            first_coeffs, second_coeffs = self.optics.get_coefficients('xz')
-
-        xs = self.optics.tube.x_positions()
-        ys = []
-
-        for i in range(len(xs)):
-            ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
-            ys.append(second_coeffs[0] * xs[i] + second_coeffs[1]) 
-        
-        coordinates = [xs, ys]
+        coordinates = self.model.collimator_optics(self.current_plane)
 
         self.axis.scatter(coordinates[0], coordinates[1], color='black')
 
-        self.axis.plot([coordinates[0][0], coordinates[0][-1]], [coordinates[1][0], coordinates[1][-1]], color='red', label='optic scatter')
-        self.axis.plot([coordinates[0][1], coordinates[0][-2]], [coordinates[1][1], coordinates[1][-2]], color='red')
+        self.axis.plot([coordinates[0][0], coordinates[0][-2]], [coordinates[1][0], coordinates[1][-2]], color='red', label='optic scatter')
+        self.axis.plot([coordinates[0][1], coordinates[0][-1]], [coordinates[1][1], coordinates[1][-1]], color='red')
 
     def draw_reflections(self) -> None:
-        if self.current_plane == 'xy':
-            reflections = self.reflections.get_coefficients('xy')
+        reflections = self.model.collimator_reflections(self.current_plane)
+        for refl in reflections:
+            self.axis.plot(refl[0], refl[1], color='green', label='reflections')
 
-        if self.current_plane == 'xz':
-            reflections = self.reflections.get_coefficients('xz')
-
-        for refl in reflections[:-1]:
-            xs, ys = refl
-            self.axis.plot(xs, ys, color='green')
-
-        self.axis.plot(reflections[-1][0], reflections[-1][1], color='green', label='reflections')
-
-    def switch_enable_optics(self) -> None:
+    def switch_optics(self) -> None:
         self.is_optics_enable = not self.is_optics_enable
         self.draw(self.current_plane)
 
-    def switch_enable_reflections(self) -> None:
+    def switch_reflections(self) -> None:
         self.is_reflections_enable = not self.is_reflections_enable
         self.draw(self.current_plane)
 

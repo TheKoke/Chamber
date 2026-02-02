@@ -55,7 +55,7 @@
          <item>
           <widget class="QLabel" name="h1_label">
            <property name="text">
-            <string>1st diameter</string>
+            <string>1st collim.</string>
            </property>
           </widget>
          </item>
@@ -79,7 +79,7 @@
          <item>
           <widget class="QLabel" name="h2_label">
            <property name="text">
-            <string>2nd diameter</string>
+            <string>2nd collim.</string>
            </property>
           </widget>
          </item>
@@ -252,6 +252,19 @@
         </layout>
        </item>
        <item>
+        <widget class="QPushButton" name="remove_button">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>45</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Remove labels</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="settings_button">
          <property name="minimumSize">
           <size>
@@ -268,7 +281,7 @@
         <widget class="QTextEdit" name="output"/>
        </item>
        <item>
-        <widget class="QPushButton" name="optics_button">
+        <widget class="QPushButton" name="collimator_optics_button">
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -276,20 +289,20 @@
           </size>
          </property>
          <property name="text">
-          <string>Optics</string>
+          <string>Collimator optics</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="spot_button">
+        <widget class="QPushButton" name="telescope_optics_button">
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>60</height>
+           <height>45</height>
           </size>
          </property>
          <property name="text">
-          <string>Spot on Target</string>
+          <string>Telescope optics</string>
          </property>
         </widget>
        </item>

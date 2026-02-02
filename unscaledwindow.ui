@@ -55,7 +55,7 @@
          <item>
           <widget class="QLabel" name="h1_label">
            <property name="text">
-            <string>1st diameter</string>
+            <string>1st collim.</string>
            </property>
           </widget>
          </item>
@@ -79,7 +79,7 @@
          <item>
           <widget class="QLabel" name="h2_label">
            <property name="text">
-            <string>2nd diameter</string>
+            <string>2nd collim.</string>
            </property>
           </widget>
          </item>

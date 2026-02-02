@@ -38,6 +38,11 @@ class Chamber:
         axis.add_patch(Circle((0.0, 0.0), self.diameter / 2, color='darkgray', label='chamber', fill=False, linewidth=2.5))
         axis.add_patch(Polygon(vertices, closed=False, color='darkgray', label='chamber', fill=False, linewidth=2.5))
 
+        self.__target.draw(axis)
+        self.__ctube.draw(axis)
+        for telescope in self.__telescopes:
+            telescope.draw(axis)
+
 
 class AdditionalVolume:
     def __init__(self, points: list[list[float]]):
@@ -116,17 +121,21 @@ class Tube:
         self._theta %= 360
         self._theta = 360 - self._theta if self._is_clockwise else self._theta
 
-    def draw(self, axis: Axes, plane: str = 'xy') -> None:
-        self._f.draw(axis, plane, theta=self._theta if self._is_clockwise else self._theta)
-        self._s.draw(axis, plane, theta=self._theta if self._is_clockwise else self._theta)
+    def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
+        if no_rotation:
+            self._f.draw(axis, plane)
+            self._s.draw(axis, plane)
+        else:
+            self._f.draw(axis, plane, theta=self._theta)
+            self._s.draw(axis, plane, theta=self._theta)
 
 
 class CollimationTube(Tube):
     def __init__(self, first: Collimator, second: Collimator) -> None:
         super().__init__(first, second)
 
-    def draw(self, axis: Axes, plane: str = 'xy') -> None:
-        super().draw(axis, plane)
+    def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
+        super().draw(axis, plane, no_rotation)
 
 
 class Telescope(Tube):
@@ -137,8 +146,8 @@ class Telescope(Tube):
     def detector_position(self) -> tuple[float, float, float]:
         return (self._s.x_position, self._s.y_position, self._s.z_position)
     
-    def draw(self, axis: Axes, plane: str = 'xy') -> None:
-        super().draw(axis, plane)
+    def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
+        super().draw(axis, plane, no_rotation)
         
         detector_width, detector_height = 25, 25
         detector_x, detector_y, detector_z = self.detector_position
@@ -151,7 +160,7 @@ class Telescope(Tube):
                 (detector_x, detector_y), 
                 detector_width, 
                 detector_height, 
-                angle=self._theta,
+                angle=0 if no_rotation else self._theta,
                 rotation_point=(0.0, 0.0), 
                 color="blue",
                 label='detector'

@@ -30,11 +30,12 @@ def starting_position() -> Geometry:
     rear_telescope = Telescope(rear_collimator1, rear_collimator2)
 
     points = [
-        [  320.087, -90.0  ],
-        [ 1040.087, -90.0  ],
-        [ 1040.087,  90.0  ],
-        [  815.812, 491.622],
-        [  285.756,  170   ]
+        [ 1688.087, -90.0  ],
+        [ 2408.087, -90.0  ],
+        [ 2408.087,  90.0  ],
+        [ 2183.812, 491.622],
+        [ 1653.756,  170   ],
+        [ 1688.087, -90.0  ]
     ]
     back = AdditionalVolume(points)
 
