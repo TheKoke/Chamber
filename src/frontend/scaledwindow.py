@@ -1,3 +1,10 @@
+from backend.geometry import Geometry
+from backend.painter import ScaledPainter
+
+from matplotlib.figure import Figure
+from matplotlib.backend_bases import MouseEvent, MouseButton
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT, FigureCanvasQTAgg
+
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import QSize, Qt, QMetaObject, QCoreApplication
 from PyQt5.QtWidgets import (
@@ -7,18 +14,18 @@ from PyQt5.QtWidgets import (
 )
 
 
-class Ui_GeomWindow(object):
-    def setupUi(self, GeomWindow):
-        GeomWindow.setObjectName("GeomWindow")
-        GeomWindow.resize(1000, 750)
-        GeomWindow.setMinimumSize(QSize(1000, 750))
+class Ui_ScaledWindow(object):
+    def setupUi(self, ScaledWindow):
+        ScaledWindow.setObjectName("ScaledWindow")
+        ScaledWindow.resize(1000, 750)
+        ScaledWindow.setMinimumSize(QSize(1000, 750))
         font = QFont()
         font.setFamily("Bahnschrift SemiBold")
         font.setPointSize(12)
         font.setBold(True)
         font.setWeight(75)
-        GeomWindow.setFont(font)
-        self.centralwidget = QWidget(GeomWindow)
+        ScaledWindow.setFont(font)
+        self.centralwidget = QWidget(ScaledWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout = QHBoxLayout(self.centralwidget)
         self.horizontalLayout.setObjectName("horizontalLayout")
@@ -159,31 +166,52 @@ class Ui_GeomWindow(object):
         self.matplotlib_layout.setFrameShadow(QFrame.Raised)
         self.matplotlib_layout.setObjectName("matplotlib_layout")
         self.horizontalLayout.addWidget(self.matplotlib_layout)
-        GeomWindow.setCentralWidget(self.centralwidget)
+        ScaledWindow.setCentralWidget(self.centralwidget)
 
-        self.retranslateUi(GeomWindow)
-        QMetaObject.connectSlotsByName(GeomWindow)
+        self.retranslateUi(ScaledWindow)
+        QMetaObject.connectSlotsByName(ScaledWindow)
 
-    def retranslateUi(self, GeomWindow):
+    def retranslateUi(self, ScaledWindow):
         _translate = QCoreApplication.translate
-        GeomWindow.setWindowTitle(_translate("GeomWindow", "Geometry of Chamber"))
-        self.h1_label.setText(_translate("GeomWindow", "1st collim."))
-        self.h1_box.setSuffix(_translate("GeomWindow", " mm"))
-        self.h2_label.setText(_translate("GeomWindow", "2nd collim."))
-        self.h2_box.setSuffix(_translate("GeomWindow", " mm"))
-        self.d1_label.setText(_translate("GeomWindow", "D1:"))
-        self.d1_box.setSuffix(_translate("GeomWindow", " mm"))
-        self.d2_label.setText(_translate("GeomWindow", "D2:"))
-        self.d2_box.setSuffix(_translate("GeomWindow", " mm"))
-        self.telescope1_label.setText(_translate("GeomWindow", "1st telescope:"))
-        self.telescope2_label.setText(_translate("GeomWindow", "2nd telescope:"))
-        self.telescope3_label.setText(_translate("GeomWindow", "3rd telescope:"))
-        self.target_label.setText(_translate("GeomWindow", "Target angle:"))
-        self.remove_button.setText(_translate("GeomWindow", "Remove labels"))
-        self.settings_button.setText(_translate("GeomWindow", "Settings"))
-        self.collimator_optics_button.setText(_translate("GeomWindow", "Collimator optics"))
-        self.telescope_optics_button.setText(_translate("GeomWindow", "Telescope optics"))
-        self.author_label.setText(_translate("GeomWindow", "Chamber, LLENR app by TheKoke"))
+        ScaledWindow.setWindowTitle(_translate("ScaledWindow", "Geometry of Chamber"))
+        self.h1_label.setText(_translate("ScaledWindow", "1st collim."))
+        self.h1_box.setSuffix(_translate("ScaledWindow", " mm"))
+        self.h2_label.setText(_translate("ScaledWindow", "2nd collim."))
+        self.h2_box.setSuffix(_translate("ScaledWindow", " mm"))
+        self.d1_label.setText(_translate("ScaledWindow", "D1:"))
+        self.d1_box.setSuffix(_translate("ScaledWindow", " mm"))
+        self.d2_label.setText(_translate("ScaledWindow", "D2:"))
+        self.d2_box.setSuffix(_translate("ScaledWindow", " mm"))
+        self.telescope1_label.setText(_translate("ScaledWindow", "1st telescope:"))
+        self.telescope2_label.setText(_translate("ScaledWindow", "2nd telescope:"))
+        self.telescope3_label.setText(_translate("ScaledWindow", "3rd telescope:"))
+        self.target_label.setText(_translate("ScaledWindow", "Target angle:"))
+        self.remove_button.setText(_translate("ScaledWindow", "Remove labels"))
+        self.settings_button.setText(_translate("ScaledWindow", "Settings"))
+        self.collimator_optics_button.setText(_translate("ScaledWindow", "Collimator optics"))
+        self.telescope_optics_button.setText(_translate("ScaledWindow", "Telescope optics"))
+        self.author_label.setText(_translate("ScaledWindow", "Chamber, LLENR app by TheKoke"))
+
+
+class ScaledWindow(QMainWindow, Ui_ScaledWindow):
+    def __init__(self, model: Geometry) -> None:
+        super().__init__()
+        self.setupUi(self)
+        self.setWindowIcon(QIcon("./icon.ico"))
+
+        layout = QVBoxLayout(self.matplotlib_layout)
+        self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
+        self.view.mpl_connect('button_press_event', self.add_pointer)
+        self.toolbar = NavigationToolbar2QT(self.view, self.matplotlib_layout)
+        self.axes = self.view.figure.subplots()
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.view)
+
+        self.model = model
+        self.painter = ScaledPainter(self.axes, model)
+
+    def add_pointer(self, event: MouseEvent) -> None:
+        pass
 
 
 if __name__ == "__main__":

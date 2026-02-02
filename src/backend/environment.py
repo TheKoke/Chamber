@@ -139,37 +139,17 @@ class CollimationTube(Tube):
 
 
 class Telescope(Tube):
-    def __init__(self, first: Collimator, second: Collimator, is_clockwise: bool = True) -> None:
+    def __init__(self, first: Collimator, second: Collimator, detector: Detector, is_clockwise: bool = True) -> None:
         super().__init__(first, second, is_clockwise=is_clockwise)
-    
+        self._detector = detector
+
     @property
-    def detector_position(self) -> tuple[float, float, float]:
-        return (self._s.x_position, self._s.y_position, self._s.z_position)
+    def detector(self) -> Detector:
+        return self._detector
     
     def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
         super().draw(axis, plane, no_rotation)
-        
-        detector_width, detector_height = 25, 25
-        detector_x, detector_y, detector_z = self.detector_position
-
-        if plane == 'xy':
-            detector_x += self._s.thickness
-            detector_y -= 0.5 * detector_height
-
-            axis.add_patch(Rectangle(
-                (detector_x, detector_y), 
-                detector_width, 
-                detector_height, 
-                angle=0 if no_rotation else self._theta,
-                rotation_point=(0.0, 0.0), 
-                color="blue",
-                label='detector'
-            )) 
-
-        if plane == 'xz':
-            detector_x += self._s.thickness
-            detector_z -= 0.5 * detector_height
-            axis.add_patch(Rectangle((detector_x, detector_z), detector_width, detector_height, color="blue"))
+        self._detector.draw(axis, plane, no_rotation)
 
 
 class Environment:
@@ -280,6 +260,33 @@ class Target(Environment):
 
         if plane == 'xz':
             axis.plot([self._x, self._x], [self._z - self._h / 2, self._z + self._h / 2], color='purple', label='target')
+
+
+class Detector(Environment):
+    def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, theta: float = 0.0) -> None:
+        super().__init__(x, y, z)
+        self._theta = theta
+
+    def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
+        detector_width, detector_height = 25, 25
+        x, y, z = self._x, self._y, self._z
+
+        if plane == 'xy':
+            y -= 0.5 * detector_height
+
+            axis.add_patch(Rectangle(
+                (x, y), 
+                detector_width, 
+                detector_height, 
+                angle=0 if no_rotation else self._theta,
+                rotation_point=(0.0, 0.0), 
+                color="blue",
+                label='detector'
+            )) 
+
+        if plane == 'xz':
+            z -= 0.5 * detector_height
+            axis.add_patch(Rectangle((x, z), detector_width, detector_height, color="blue"))
 
 
 if __name__ == '__main__':

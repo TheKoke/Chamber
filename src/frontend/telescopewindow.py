@@ -1,3 +1,6 @@
+from backend.environment import Telescope
+from frontend.collimatorwindow import CollimatorWindow
+
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import QSize, Qt, QMetaObject, QCoreApplication
 from PyQt5.QtWidgets import (
@@ -143,9 +146,25 @@ class Ui_TelescopeWindow(object):
 
 
 class TelescopeWindow(QDialog, Ui_TelescopeWindow):
-    def __init__(self) -> None:
+    def __init__(self, telescope: Telescope) -> None:
         super().__init__()
         self.setupUi(self)
+        self.setWindowIcon(QIcon("./icon.ico"))
+
+        self.telescope = telescope
+
+        self.first_button.clicked.connect(self.open_first)
+        self.second_button.clicked.connect(self.open_second)
+
+    def open_first(self) -> None:
+        self.window = CollimatorWindow(self.telescope.first_collimator)
+        self.window.show()
+        return
+
+    def open_second(self) -> None:
+        self.window = CollimatorWindow(self.telescope.second_collimator)
+        self.window.show()
+        return
 
 
 if __name__ == "__main__":

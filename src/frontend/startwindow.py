@@ -1,5 +1,6 @@
 from backend.start import starting_position
-from frontend.geomwindow import GeomWindow
+from frontend.scaledwindow import ScaledWindow
+from frontend.unscaledwindow import UnscaledWindow
 
 from PyQt5.QtGui import QFont, QIcon, QPixmap
 from PyQt5.QtCore import QSize, Qt, QMetaObject, QCoreApplication
@@ -108,19 +109,15 @@ class StartWindow(QWidget, Ui_StartWindow):
         self.unscale_button.clicked.connect(self.start_unscale)
 
     def start_full_scale(self) -> None:
-        self.geom_window = GeomWindow(starting_position())
+        self.geom_window = ScaledWindow(starting_position())
         self.geom_window.show()
         self.close()
 
     def start_unscale(self) -> None:
-        self.geom_window = GeomWindow(starting_position())
+        self.geom_window = UnscaledWindow(starting_position())
         self.geom_window.show()
         self.close()
 
 
 if __name__ == "__main__":
-    import sys
-    app = QApplication(sys.argv)
-    startWindow = StartWindow()
-    startWindow.show()
-    sys.exit(app.exec_())
+    pass
