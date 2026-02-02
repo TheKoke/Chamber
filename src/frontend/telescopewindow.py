@@ -1,29 +1,27 @@
-from backend.environment import Target
-
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import QSize, Qt, QMetaObject, QCoreApplication
 from PyQt5.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QFrame, 
     QLabel, QDoubleSpinBox, QSpacerItem, 
-    QSizePolicy, QDialogButtonBox, QDialog, QWidget
+    QSizePolicy, QDialogButtonBox, QDialog, QPushButton
 )
 
 
-class Ui_TargetWindow(object):
-    def setupUi(self, TargetWindow):
-        TargetWindow.setObjectName("TargetWindow")
-        TargetWindow.resize(600, 300)
-        TargetWindow.setMinimumSize(QSize(600, 300))
-        TargetWindow.setMaximumSize(QSize(800, 450))
+class Ui_TelescopeWindow(object):
+    def setupUi(self, TelescopeWindow):
+        TelescopeWindow.setObjectName("TelescopeWindow")
+        TelescopeWindow.resize(600, 300)
+        TelescopeWindow.setMinimumSize(QSize(600, 300))
+        TelescopeWindow.setMaximumSize(QSize(800, 450))
         font = QFont()
         font.setFamily("Bahnschrift SemiBold")
         font.setPointSize(12)
         font.setBold(True)
         font.setWeight(75)
-        TargetWindow.setFont(font)
-        self.horizontalLayout = QHBoxLayout(TargetWindow)
+        TelescopeWindow.setFont(font)
+        self.horizontalLayout = QHBoxLayout(TelescopeWindow)
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.coordiantes_layout = QFrame(TargetWindow)
+        self.coordiantes_layout = QFrame(TelescopeWindow)
         self.coordiantes_layout.setFrameShape(QFrame.StyledPanel)
         self.coordiantes_layout.setFrameShadow(QFrame.Raised)
         self.coordiantes_layout.setObjectName("coordiantes_layout")
@@ -83,14 +81,13 @@ class Ui_TargetWindow(object):
         self.angle_layout.addWidget(self.angle_label)
         self.angle_box = QDoubleSpinBox(self.coordiantes_layout)
         self.angle_box.setAccelerated(True)
-        self.angle_box.setDecimals(0)
-        self.angle_box.setMaximum(360.0)
-        self.angle_box.setSingleStep(45.0)
+        self.angle_box.setMaximum(180.0)
+        self.angle_box.setSingleStep(0.01)
         self.angle_box.setObjectName("angle_box")
         self.angle_layout.addWidget(self.angle_box)
         self.verticalLayout.addLayout(self.angle_layout)
         self.horizontalLayout.addWidget(self.coordiantes_layout)
-        self.info_layout = QFrame(TargetWindow)
+        self.info_layout = QFrame(TelescopeWindow)
         self.info_layout.setFrameShape(QFrame.StyledPanel)
         self.info_layout.setFrameShadow(QFrame.Raised)
         self.info_layout.setObjectName("info_layout")
@@ -104,43 +101,21 @@ class Ui_TargetWindow(object):
         self.info_label.setAlignment(Qt.AlignCenter)
         self.info_label.setObjectName("info_label")
         self.verticalLayout_2.addWidget(self.info_label)
-        self.properties_label = QLabel(self.info_layout)
-        self.properties_label.setAlignment(Qt.AlignCenter)
-        self.properties_label.setObjectName("properties_label")
-        self.verticalLayout_2.addWidget(self.properties_label)
-        self.properties_layout = QHBoxLayout()
-        self.properties_layout.setObjectName("properties_layout")
-        self.width_layout = QHBoxLayout()
-        self.width_layout.setObjectName("width_layout")
-        self.width_label = QLabel(self.info_layout)
-        self.width_label.setMaximumSize(QSize(16777215, 40))
-        self.width_label.setAlignment(Qt.AlignCenter)
-        self.width_label.setObjectName("width_label")
-        self.width_layout.addWidget(self.width_label)
-        self.width_box = QDoubleSpinBox(self.info_layout)
-        self.width_box.setMaximum(999999999.0)
-        self.width_box.setSingleStep(0.1)
-        self.width_box.setProperty("value", 10.0)
-        self.width_box.setObjectName("width_box")
-        self.width_layout.addWidget(self.width_box)
-        self.properties_layout.addLayout(self.width_layout)
-        self.height_layout = QHBoxLayout()
-        self.height_layout.setObjectName("height_layout")
-        self.height_label = QLabel(self.info_layout)
-        self.height_label.setMaximumSize(QSize(16777215, 40))
-        self.height_label.setAlignment(Qt.AlignCenter)
-        self.height_label.setObjectName("height_label")
-        self.height_layout.addWidget(self.height_label)
-        self.height_box = QDoubleSpinBox(self.info_layout)
-        self.height_box.setMaximum(999999999.0)
-        self.height_box.setSingleStep(0.1)
-        self.height_box.setProperty("value", 10.0)
-        self.height_box.setObjectName("height_box")
-        self.height_layout.addWidget(self.height_box)
-        self.properties_layout.addLayout(self.height_layout)
-        self.verticalLayout_2.addLayout(self.properties_layout)
         spacerItem3 = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         self.verticalLayout_2.addItem(spacerItem3)
+        self.collimators_layout = QHBoxLayout()
+        self.collimators_layout.setObjectName("collimators_layout")
+        self.first_button = QPushButton(self.info_layout)
+        self.first_button.setMinimumSize(QSize(0, 50))
+        self.first_button.setObjectName("first_button")
+        self.collimators_layout.addWidget(self.first_button)
+        self.second_button = QPushButton(self.info_layout)
+        self.second_button.setMinimumSize(QSize(0, 50))
+        self.second_button.setObjectName("second_button")
+        self.collimators_layout.addWidget(self.second_button)
+        self.verticalLayout_2.addLayout(self.collimators_layout)
+        spacerItem4 = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.verticalLayout_2.addItem(spacerItem4)
         self.okbutton = QDialogButtonBox(self.info_layout)
         self.okbutton.setMaximumSize(QSize(16777215, 50))
         self.okbutton.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
@@ -148,68 +123,29 @@ class Ui_TargetWindow(object):
         self.verticalLayout_2.addWidget(self.okbutton)
         self.horizontalLayout.addWidget(self.info_layout)
 
-        self.retranslateUi(TargetWindow)
-        QMetaObject.connectSlotsByName(TargetWindow)
+        self.retranslateUi(TelescopeWindow)
+        QMetaObject.connectSlotsByName(TelescopeWindow)
 
-    def retranslateUi(self, TargetWindow):
+    def retranslateUi(self, TelescopeWindow):
         _translate = QCoreApplication.translate
-        TargetWindow.setWindowTitle(_translate("TargetWindow", "Target Settings"))
-        self.xcoord_label.setText(_translate("TargetWindow", "X:"))
-        self.xcoord_box.setSuffix(_translate("TargetWindow", " mm"))
-        self.ycoord_label.setText(_translate("TargetWindow", "Y:"))
-        self.ycoord_box.setSuffix(_translate("TargetWindow", " mm"))
-        self.zcoord_label.setText(_translate("TargetWindow", "Z:"))
-        self.zcoord_box.setSuffix(_translate("TargetWindow", " mm"))
-        self.angle_label.setText(_translate("TargetWindow", "α:"))
-        self.angle_box.setSuffix(_translate("TargetWindow", " deg."))
-        self.info_label.setText(_translate("TargetWindow", "Thin Target"))
-        self.properties_label.setText(_translate("TargetWindow", "Width           &         Height"))
-        self.width_label.setText(_translate("TargetWindow", "W:"))
-        self.width_box.setSuffix(_translate("TargetWindow", " mm"))
-        self.height_label.setText(_translate("TargetWindow", "H:"))
-        self.height_box.setSuffix(_translate("TargetWindow", " mm"))
+        TelescopeWindow.setWindowTitle(_translate("TelescopeWindow", "Telescope Settings"))
+        self.xcoord_label.setText(_translate("TelescopeWindow", "X:"))
+        self.xcoord_box.setSuffix(_translate("TelescopeWindow", " mm"))
+        self.ycoord_label.setText(_translate("TelescopeWindow", "Y:"))
+        self.ycoord_box.setSuffix(_translate("TelescopeWindow", " mm"))
+        self.zcoord_label.setText(_translate("TelescopeWindow", "Z:"))
+        self.zcoord_box.setSuffix(_translate("TelescopeWindow", " mm"))
+        self.angle_label.setText(_translate("TelescopeWindow", "α:"))
+        self.angle_box.setSuffix(_translate("TelescopeWindow", " deg."))
+        self.info_label.setText(_translate("TelescopeWindow", "E-dE Telescope"))
+        self.first_button.setText(_translate("TelescopeWindow", "1st collimator"))
+        self.second_button.setText(_translate("TelescopeWindow", "2nd collimator"))
 
 
-class TargetWindow(QDialog, Ui_TargetWindow):
-    def __init__(self, target: Target) -> None:
-        # window initializing
+class TelescopeWindow(QDialog, Ui_TelescopeWindow):
+    def __init__(self) -> None:
         super().__init__()
         self.setupUi(self)
-        self.setWindowIcon(QIcon('./icon.ico'))
-
-        # target
-        self.target = target
-        self.set_values()
-
-        # event handling
-        ok, cancel = self.okbutton.buttons()
-        ok.clicked.connect(self.save)
-        cancel.clicked.connect(self.close)
-
-    def set_values(self) -> None:
-        self.xcoord_box.setValue(self.target.x_position)
-        self.ycoord_box.setValue(self.target.y_position)
-        self.zcoord_box.setValue(self.target.z_position)
-
-        self.width_box.setValue(self.target.width)
-        self.height_box.setValue(self.target.height)
-
-    def save(self) -> None:
-        xcoord = self.xcoord_box.value()
-        ycoord = self.ycoord_box.value()
-        zcoord = self.zcoord_box.value()
-        width = self.width_box.value()
-        height = self.height_box.value()
-
-        dx = xcoord - self.target.x_position
-        dy = ycoord - self.target.y_position
-        dz = zcoord - self.target.z_position
-
-        self.target.move(dx, dy, dz)
-        self.target.width = width
-        self.target.height = height
-
-        self.close()
 
 
 if __name__ == "__main__":

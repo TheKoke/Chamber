@@ -10,20 +10,20 @@ from PyQt5.QtWidgets import (
 
 
 class Ui_CollimatorWindow(object):
-    def setupUi(self, DetectorWindow):
-        DetectorWindow.setObjectName("CollimatorWindow")
-        DetectorWindow.resize(600, 300)
-        DetectorWindow.setMinimumSize(QSize(600, 300))
-        DetectorWindow.setMaximumSize(QSize(800, 450))
+    def setupUi(self, CollimatorWindow):
+        CollimatorWindow.setObjectName("CollimatorWindow")
+        CollimatorWindow.resize(600, 300)
+        CollimatorWindow.setMinimumSize(QSize(600, 300))
+        CollimatorWindow.setMaximumSize(QSize(800, 450))
         font = QFont()
         font.setFamily("Bahnschrift SemiBold")
         font.setPointSize(12)
         font.setBold(True)
         font.setWeight(75)
-        DetectorWindow.setFont(font)
-        self.horizontalLayout = QHBoxLayout(DetectorWindow)
+        CollimatorWindow.setFont(font)
+        self.horizontalLayout = QHBoxLayout(CollimatorWindow)
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.coordiantes_layout = QFrame(DetectorWindow)
+        self.coordiantes_layout = QFrame(CollimatorWindow)
         self.coordiantes_layout.setFrameShape(QFrame.StyledPanel)
         self.coordiantes_layout.setFrameShadow(QFrame.Raised)
         self.coordiantes_layout.setObjectName("coordiantes_layout")
@@ -76,7 +76,7 @@ class Ui_CollimatorWindow(object):
         self.zcoord_layout.addWidget(self.zcoord_box)
         self.verticalLayout.addLayout(self.zcoord_layout)
         self.horizontalLayout.addWidget(self.coordiantes_layout)
-        self.info_layout = QFrame(DetectorWindow)
+        self.info_layout = QFrame(CollimatorWindow)
         self.info_layout.setFrameShape(QFrame.StyledPanel)
         self.info_layout.setFrameShadow(QFrame.Raised)
         self.info_layout.setObjectName("info_layout")
@@ -103,12 +103,12 @@ class Ui_CollimatorWindow(object):
         self.radius_label.setAlignment(Qt.AlignCenter)
         self.radius_label.setObjectName("radius_label")
         self.radius_layout.addWidget(self.radius_label)
-        self.radius_box = QDoubleSpinBox(self.info_layout)
-        self.radius_box.setMaximum(999999999.0)
-        self.radius_box.setSingleStep(0.1)
-        self.radius_box.setProperty("value", 3.0)
-        self.radius_box.setObjectName("radius_box")
-        self.radius_layout.addWidget(self.radius_box)
+        self.diameter_box = QDoubleSpinBox(self.info_layout)
+        self.diameter_box.setMaximum(999999999.0)
+        self.diameter_box.setSingleStep(0.1)
+        self.diameter_box.setProperty("value", 3.0)
+        self.diameter_box.setObjectName("diameter_box")
+        self.radius_layout.addWidget(self.diameter_box)
         self.properties_layout.addLayout(self.radius_layout)
         self.thickness_layout = QHBoxLayout()
         self.thickness_layout.setObjectName("thickness_layout")
@@ -134,8 +134,8 @@ class Ui_CollimatorWindow(object):
         self.verticalLayout_2.addWidget(self.okbutton)
         self.horizontalLayout.addWidget(self.info_layout)
 
-        self.retranslateUi(DetectorWindow)
-        QMetaObject.connectSlotsByName(DetectorWindow)
+        self.retranslateUi(CollimatorWindow)
+        QMetaObject.connectSlotsByName(CollimatorWindow)
 
     def retranslateUi(self, DetectorWindow):
         _translate = QCoreApplication.translate
@@ -149,7 +149,7 @@ class Ui_CollimatorWindow(object):
         self.collimator_label.setText(_translate("CollimatorWindow", "Collimator"))
         self.properties_label.setText(_translate("CollimatorWindow", "Radius           &         Thickness"))
         self.radius_label.setText(_translate("CollimatorWindow", "R:"))
-        self.radius_box.setSuffix(_translate("CollimatorWindow", " mm"))
+        self.diameter_box.setSuffix(_translate("CollimatorWindow", " mm"))
         self.thickness_label.setText(_translate("CollimatorWindow", "T:"))
         self.thickness_box.setSuffix(_translate("CollimatorWindow", " mm"))
 
@@ -182,7 +182,7 @@ class CollimatorWindow(QDialog, Ui_CollimatorWindow):
         xcoord = self.xcoord_box.value()
         ycoord = self.ycoord_box.value()
         zcoord = self.zcoord_box.value()
-        radius = self.radius_box.value()
+        diameter = self.diameter_box.value()
         thickness = self.thickness_box.value()
 
         dx = xcoord - self.collimator.x_position
@@ -190,7 +190,7 @@ class CollimatorWindow(QDialog, Ui_CollimatorWindow):
         dz = zcoord - self.collimator.z_position
 
         self.collimator.move(dx, dy, dz)
-        self.collimator.radius = radius
+        self.collimator.diameter = diameter
         self.collimator.thickness = thickness
 
         self.close()
