@@ -1,6 +1,11 @@
 from backend.geometry import Geometry
 from backend.painter import UnscaledPainter
 
+from frontend.targetwindow import Target
+from frontend.spotwindow import SpotWindow
+from frontend.detectorwindow import Detector
+from frontend.collimatorwindow import CollimatorWindow
+
 from matplotlib.figure import Figure
 from matplotlib.backend_bases import MouseEvent, MouseButton
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT, FigureCanvasQTAgg
@@ -122,6 +127,7 @@ class Ui_UnscaledWindow(object):
         self.verticalLayout.addLayout(self.plane_layout)
         self.output = QTextEdit(self.tools_layout)
         self.output.setObjectName("output")
+        self.output.setReadOnly(True)
         self.verticalLayout.addWidget(self.output)
         self.optics_button = QPushButton(self.tools_layout)
         self.optics_button.setMinimumSize(QSize(0, 45))
@@ -197,7 +203,76 @@ class UnscaledWindow(QMainWindow, Ui_UnscaledWindow):
         self.model = model
         self.painter = UnscaledPainter(self.axes, model)
 
+        self.h1_box.valueChanged.connect(self.h1_change)
+        self.h2_box.valueChanged.connect(self.h2_change)
+        self.d1_box.valueChanged.connect(self.d1_change)
+        self.d2_box.valueChanged.connect(self.d2_change)
+        self.d3_box.valueChanged.connect(self.d3_change)
+        self.collimator1_button.clicked.connect(self.open_collimator1)
+        self.collimator2_button.clicked.connect(self.open_collimator2)
+        self.target_button.clicked.connect(self.open_target)
+        self.detector_button.clicked.connect(self.open_detector)
+        self.optics_button.clicked.connect(self.switch_optics)
+        self.reflections_button.clicked.connect(self.switch_reflections)
+        self.spot_button.clicked.connect(self.open_spot)
+
+        self.xy_radio.setChecked(True)
+        self.xy_radio.clicked.connect(self.xy_plane)
+        self.xz_radio.clicked.connect(self.xz_plane)
+
     def add_pointer(self, event: MouseEvent) -> None:
+        pass
+
+    def setup(self) -> None:
+        pass
+
+    def draw(self) -> None:
+        self.painter.draw()
+        self.view.draw()
+
+    def output(self) -> None:
+        pass
+
+    def h1_change(self) -> None:
+        pass
+
+    def h2_change(self) -> None:
+        pass
+
+    def d1_change(self) -> None:
+        pass
+
+    def d2_change(self) -> None:
+        pass
+
+    def d3_change(self) -> None:
+        pass
+
+    def open_collimator1(self) -> None:
+        pass
+    
+    def open_collimator2(self) -> None:
+        pass
+
+    def open_target(self) -> None:
+        pass
+
+    def open_detector(self) -> None:
+        pass
+
+    def xy_plane(self) -> None:
+        pass
+
+    def xz_plane(self) -> None:
+        pass
+
+    def switch_optics(self) -> None:
+        pass
+
+    def switch_reflections(self) -> None:
+        pass
+
+    def open_spot(self) -> None:
         pass
 
 

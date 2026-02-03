@@ -93,6 +93,7 @@ class Ui_ScaledWindow(object):
         self.telescope1_slider.setMaximum(180)
         self.telescope1_slider.setOrientation(Qt.Horizontal)
         self.telescope1_slider.setObjectName("telescope1_slider")
+        self.telescope1_slider.setRange(0, 180)
         self.telescope1_layout.addWidget(self.telescope1_slider)
         self.verticalLayout.addLayout(self.telescope1_layout)
         self.telescope2_layout = QVBoxLayout()
@@ -105,6 +106,7 @@ class Ui_ScaledWindow(object):
         self.telescope2_slider.setMaximum(180)
         self.telescope2_slider.setOrientation(Qt.Horizontal)
         self.telescope2_slider.setObjectName("telescope2_slider")
+        self.telescope2_slider.setRange(0, 180)
         self.telescope2_layout.addWidget(self.telescope2_slider)
         self.verticalLayout.addLayout(self.telescope2_layout)
         self.telescope3_layout = QVBoxLayout()
@@ -114,9 +116,12 @@ class Ui_ScaledWindow(object):
         self.telescope3_label.setObjectName("telescope3_label")
         self.telescope3_layout.addWidget(self.telescope3_label)
         self.telescope3_slider = QSlider(self.tools_layout)
-        self.telescope3_slider.setMaximum(180)
         self.telescope3_slider.setOrientation(Qt.Horizontal)
         self.telescope3_slider.setObjectName("telescope3_slider")
+        self.telescope3_slider.setRange(0, 24)
+        self.telescope3_slider.setSingleStep(1)
+        self.telescope3_slider.setTickInterval(1)
+        self.telescope3_slider.setTickPosition(QSlider.TicksBelow)
         self.telescope3_layout.addWidget(self.telescope3_slider)
         self.verticalLayout.addLayout(self.telescope3_layout)
         self.target_layout = QVBoxLayout()
@@ -126,8 +131,11 @@ class Ui_ScaledWindow(object):
         self.target_label.setObjectName("target_label")
         self.target_layout.addWidget(self.target_label)
         self.target_slider = QSlider(self.tools_layout)
-        self.target_slider.setMaximum(360)
-        self.target_slider.setSingleStep(45)
+        self.target_slider.setRange(0, 8)
+        self.target_slider.setValue(4)
+        self.target_slider.setSingleStep(1)
+        self.target_slider.setTickInterval(1)
+        self.target_slider.setTickPosition(QSlider.TicksBelow)
         self.target_slider.setOrientation(Qt.Horizontal)
         self.target_slider.setObjectName("target_slider")
         self.target_layout.addWidget(self.target_slider)
@@ -142,6 +150,7 @@ class Ui_ScaledWindow(object):
         self.verticalLayout.addWidget(self.settings_button)
         self.output = QTextEdit(self.tools_layout)
         self.output.setObjectName("output")
+        self.output.setReadOnly(True)
         self.verticalLayout.addWidget(self.output)
         self.collimator_optics_button = QPushButton(self.tools_layout)
         self.collimator_optics_button.setMinimumSize(QSize(0, 45))
@@ -209,9 +218,100 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
 
         self.model = model
         self.painter = ScaledPainter(self.axes, model)
+        self.setup()
+
+        self.h1_box.valueChanged.connect(self.h1_change)
+        self.h2_box.valueChanged.connect(self.h2_change)
+        self.d1_box.valueChanged.connect(self.d1_change)
+        self.d2_box.valueChanged.connect(self.d2_change)
+        self.telescope1_slider.valueChanged.connect(self.telescope1_move)
+        self.telescope2_slider.valueChanged.connect(self.telescope2_move)
+        self.telescope3_slider.valueChanged.connect(self.telescope3_move)
+        self.target_slider.valueChanged.connect(self.target_move)
+        self.remove_button.clicked.connect(self.remove_labels)
+        self.settings_button.clicked.connect(self.open_settings)
+        self.collimator_optics_button.clicked.connect(self.collimator_optics_switch)
+        self.telescope_optics_button.clicked.connect(self.telescope_optics_switch)
 
     def add_pointer(self, event: MouseEvent) -> None:
         pass
+
+    def setup(self) -> None:
+        h1 = self.model.chamber.ctube.first_collimator.diameter
+        h2 = self.model.chamber.ctube.second_collimator.diameter
+        d1 = self.model.chamber.ctube.second_collimator.x_position - self.model.chamber.ctube.first_collimator.x_position
+        d2 = self.model.chamber.target.x_position - self.model.chamber.ctube.second_collimator.x_position
+
+        theta1 = int(self.model.chamber.telescopes[0].theta)
+        theta2 = int(self.model.chamber.telescopes[1].theta)
+        theta3 = int(self.model.chamber.telescopes[2].theta)
+
+        self.h1_box.setValue(h1)
+        self.h2_box.setValue(h2)
+        self.d1_box.setValue(d1)
+        self.d2_box.setValue(d2)
+
+        self.telescope1_slider.setValue(theta1)
+        self.telescope2_slider.setValue(theta2)
+        self.telescope3_slider.setValue(theta3)
+
+    def draw(self) -> None:
+        self.painter.draw()
+        self.view.draw()
+
+    def output(self) -> None:
+        pass
+
+    def h1_change(self) -> None:
+        pass
+
+    def h2_change(self) -> None:
+        pass
+
+    def d1_change(self) -> None:
+        pass
+
+    def d2_change(self) -> None:
+        pass
+
+    def telescope1_move(self) -> None:
+        print(self.telescope1_slider.value())
+
+    def telescope2_move(self) -> None:
+        print(self.telescope2_slider.value())
+
+    def telescope3_move(self) -> None:
+        print(self.telescope3_slider.value())
+
+    def target_move(self) -> None:
+        value = self.target_slider.value()
+        info = self.target_label.text()
+        new_info = info[:info.index(':')]
+
+        step = 45
+        ticks = 360 // step
+        angle = (value - ticks // 2) * step
+
+        new_info = new_info + f': {angle} deg.'
+        self.target_label.setText(new_info)
+
+        self.model.chamber.rotate_target(angle)
+        self.draw()
+
+    def remove_labels(self) -> None:
+        self.painter.switch_labels()
+        self.draw()
+
+    def open_settings(self) -> None:
+        pass
+
+    def collimator_optics_switch(self) -> None:
+        self.painter.switch_collimator_optics()
+        self.draw()
+
+    def telescope_optics_switch(self) -> None:
+        self.painter.switch_telescope_optics()
+        self.draw()
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy
 from matplotlib.axes import Axes
+from matplotlib.transforms import Affine2D
 from matplotlib.patches import Rectangle, Arc, Circle, Polygon
 
 
@@ -31,6 +32,13 @@ class Chamber:
     @property
     def telescopes(self) -> list[Telescope]:
         return self.__telescopes
+    
+    def rotate_target(self, angle: float) -> None:
+        dtheta = angle - self.target.theta
+        self.target.rotate(dtheta)
+
+    def rotate_telescope(self, index: int, angle: float) -> None:
+        pass
 
     def draw(self, axis: Axes) -> None:
         vertices = self.polygon.separate(self.polygon.find_collisions(self.diameter))
@@ -74,89 +82,13 @@ class AdditionalVolume:
         return transformed_points
 
 
-class Tube:
-    def __init__(self, first: Collimator, second: Collimator, theta: float = 0.0, is_clockwise: bool = True) -> None:
-        self._f = first
-        self._s = second
-        self._theta = theta
-        self._is_clockwise = is_clockwise
-
-    @property
-    def first_collimator(self) -> Collimator:
-        return self._f
-    
-    @property
-    def second_collimator(self) -> Collimator:
-        return self._s
-    
-    @property
-    def theta(self) -> float:
-        return self._theta
-    
-    @property
-    def is_clockwise(self) -> bool:
-        return self._is_clockwise
-    
-    @property
-    def length(self) -> float:
-        xs = (self._s.x_position - self._f.x_position)**2
-        ys = (self._s.y_position - self._f.y_position)**2
-        zs = (self._s.z_position - self._f.z_position)**2
-        return (xs + ys + zs) ** (1/2)
-    
-    def x_positions(self) -> list[float]:
-        return [self._f.x_position, self._s.x_position]
-    
-    def y_positions(self) -> list[float]:
-        return [self._f.y_position, self._s.y_position]
-
-    def z_positions(self) -> list[float]:
-        return [self._f.z_position, self._s.z_position]
-    
-    def rotate(self, dtheta: float) -> None:
-        if (self._theta + dtheta) < 0 or (self._theta + dtheta) > 180:
-            return
-
-        self._theta += dtheta
-        self._theta %= 360
-        self._theta = 360 - self._theta if self._is_clockwise else self._theta
-
-    def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
-        if no_rotation:
-            self._f.draw(axis, plane)
-            self._s.draw(axis, plane)
-        else:
-            self._f.draw(axis, plane, theta=self._theta)
-            self._s.draw(axis, plane, theta=self._theta)
-
-
-class CollimationTube(Tube):
-    def __init__(self, first: Collimator, second: Collimator) -> None:
-        super().__init__(first, second)
-
-    def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
-        super().draw(axis, plane, no_rotation)
-
-
-class Telescope(Tube):
-    def __init__(self, first: Collimator, second: Collimator, detector: Detector, is_clockwise: bool = True) -> None:
-        super().__init__(first, second, is_clockwise=is_clockwise)
-        self._detector = detector
-
-    @property
-    def detector(self) -> Detector:
-        return self._detector
-    
-    def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
-        super().draw(axis, plane, no_rotation)
-        self._detector.draw(axis, plane, no_rotation)
-
-
 class Environment:
-    def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
+    def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, theta: float = 0.0, is_clockwise: bool = True) -> None:
         self._x = x
         self._y = y
         self._z = z
+        self._theta = theta
+        self._is_clockwise = is_clockwise
 
     @property
     def x_position(self) -> float:
@@ -170,10 +102,23 @@ class Environment:
     def z_position(self) -> float:
         return self._z
     
+    @property
+    def theta(self) -> float:
+        return self._theta
+    
+    @property
+    def is_clockwise(self) -> bool:
+        return self._is_clockwise
+    
     def move(self, dx: float, dy: float, dz: float) -> None:
         self._x += dx
         self._y += dy
         self._z += dz
+
+    def rotate(self, dtheta: float) -> None:
+        self._theta += dtheta
+        self._theta %= 360
+        self._theta = 360 - self._theta if self._is_clockwise else self._theta
 
     def draw(self, axis: Axes, plane: str = 'xy') -> None:
         pass
@@ -203,7 +148,7 @@ class Collimator(Environment):
     
     @property
     def height(self) -> float:
-        return 3 * self._d
+        return 4 * self._d
     
     def draw(self, axis: Axes, plane: str = 'xy', theta: float = 0.0) -> None:
         x1, y1, z1 = self._x, self._y, self._z
@@ -233,8 +178,8 @@ class Collimator(Environment):
     
 
 class Target(Environment):
-    def __init__(self, width: float, height: float, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
-        super().__init__(x, y, z)
+    def __init__(self, width: float, height: float, x: float = 0.0, y: float = 0.0, z: float = 0.0, theta: float = 0.0) -> None:
+        super().__init__(x, y, z, theta)
         self._w = width
         self._h = height
 
@@ -256,16 +201,16 @@ class Target(Environment):
 
     def draw(self, axis: Axes, plane: str = "xy") -> None:
         if plane == 'xy':
-            axis.plot([self._x, self._x], [self._y - self._h / 2, self._y + self._h / 2], color='purple', label='target')
+            transform = Affine2D().rotate_deg(self._theta) + axis.transData
+            axis.plot([self._x, self._x], [self._y - self._h / 2, self._y + self._h / 2], transform=transform, color='purple', label='target')
 
         if plane == 'xz':
             axis.plot([self._x, self._x], [self._z - self._h / 2, self._z + self._h / 2], color='purple', label='target')
 
 
 class Detector(Environment):
-    def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, theta: float = 0.0) -> None:
-        super().__init__(x, y, z)
-        self._theta = theta
+    def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, theta: float = 0.0, is_clockwise: bool = True) -> None:
+        super().__init__(x, y, z, theta, is_clockwise)
 
     def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
         detector_width, detector_height = 25, 25
@@ -287,6 +232,75 @@ class Detector(Environment):
         if plane == 'xz':
             z -= 0.5 * detector_height
             axis.add_patch(Rectangle((x, z), detector_width, detector_height, color="blue"))
+
+
+class Tube(Environment):
+    def __init__(self, first: Collimator, second: Collimator, theta: float = 0.0, is_clockwise: bool = True) -> None:
+        x = first.x_position + first.thickness
+        y = first.y_position + first.height / 2
+        z = first.z_position + first.height / 2
+
+        super().__init__(x, y, z, theta, is_clockwise)
+        self._f = first
+        self._s = second
+
+    @property
+    def first_collimator(self) -> Collimator:
+        return self._f
+    
+    @property
+    def second_collimator(self) -> Collimator:
+        return self._s
+    
+    @property
+    def length(self) -> float:
+        xs = (self._s.x_position - self._f.x_position)**2
+        ys = (self._s.y_position - self._f.y_position)**2
+        zs = (self._s.z_position - self._f.z_position)**2
+        return (xs + ys + zs) ** (1/2)
+    
+    def x_positions(self) -> list[float]:
+        return [self._f.x_position, self._s.x_position]
+    
+    def y_positions(self) -> list[float]:
+        return [self._f.y_position, self._s.y_position]
+
+    def z_positions(self) -> list[float]:
+        return [self._f.z_position, self._s.z_position]
+
+    def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
+        if no_rotation:
+            self._f.draw(axis, plane)
+            self._s.draw(axis, plane)
+        else:
+            self._f.draw(axis, plane, theta=self._theta)
+            self._s.draw(axis, plane, theta=self._theta)
+
+
+class CollimationTube(Tube):
+    def __init__(self, first: Collimator, second: Collimator) -> None:
+        super().__init__(first, second)
+
+    def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
+        super().draw(axis, plane, no_rotation)
+
+
+class Telescope(Tube):
+    def __init__(self, first: Collimator, second: Collimator, detector: Detector) -> None:
+        super().__init__(first, second, detector.theta, is_clockwise=detector.is_clockwise)
+        self._detector = detector
+
+    @property
+    def detector(self) -> Detector:
+        return self._detector
+    
+    def rotate(self, dtheta: float) -> None:
+        super().rotate(dtheta)
+        self._detector.rotate(dtheta)
+    
+    def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
+        super().draw(axis, plane, no_rotation)
+        self._detector.draw(axis, plane, no_rotation)
 
 
 if __name__ == '__main__':

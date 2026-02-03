@@ -144,7 +144,7 @@ class UnscaledPainter:
     def draw_environment(self) -> None:
         self.model.chamber.ctube.draw(self.axis, self.current_plane, no_rotation=True)
         self.model.chamber.target.draw(self.axis, self.current_plane)
-        self.model.chamber.telescopes[0].draw(self.axis, self.current_plane, no_rotation=True)
+        self.model.chamber.telescopes[0].detector.draw(self.axis, self.current_plane, no_rotation=True)
 
     def draw_optics(self) -> None:
         coordinates = self.model.collimator_optics(self.current_plane)

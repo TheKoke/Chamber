@@ -157,13 +157,13 @@ class TelescopeWindow(QDialog, Ui_TelescopeWindow):
         self.second_button.clicked.connect(self.open_second)
 
     def open_first(self) -> None:
-        self.window = CollimatorWindow(self.telescope.first_collimator)
-        self.window.show()
+        self.collim_window = CollimatorWindow(self.telescope.first_collimator)
+        self.collim_window.show()
         return
 
     def open_second(self) -> None:
-        self.window = CollimatorWindow(self.telescope.second_collimator)
-        self.window.show()
+        self.collim_window = CollimatorWindow(self.telescope.second_collimator)
+        self.collim_window.show()
         return
 
 

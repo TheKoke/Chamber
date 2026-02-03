@@ -166,7 +166,7 @@ class Geometry:
         return result
     
     def find_stop_points(self, telescope: Telescope, line_coefficients: tuple[numpy.ndarray, numpy.ndarray]) -> list[list[float]]:
-        dx, dy, dz = telescope.detector_position
+        dx, dy = telescope.detector.x_position, telescope.detector.y_position
         first, second = line_coefficients
 
         eq_coeffs1 = [1 + first[0]**2, 2 * first[0] * first[1], first[1]**2 - (self.__chamber.diameter / 2)**2]
