@@ -1,6 +1,9 @@
 from backend.geometry import Geometry
 from backend.painter import ScaledPainter
 
+from frontend.spotwindow import SpotWindow
+from frontend.settingswindow import SettingsWindow
+
 from matplotlib.figure import Figure
 from matplotlib.backend_bases import MouseEvent, MouseButton
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT, FigureCanvasQTAgg
@@ -210,7 +213,7 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
 
         layout = QVBoxLayout(self.matplotlib_layout)
         self.view = FigureCanvasQTAgg(Figure(figsize=(16, 9)))
-        self.view.mpl_connect('button_press_event', self.add_pointer)
+        self.view.mpl_connect('button_press_event', self.handle_click)
         self.toolbar = NavigationToolbar2QT(self.view, self.matplotlib_layout)
         self.axes = self.view.figure.subplots()
         layout.addWidget(self.toolbar)
@@ -218,7 +221,7 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
 
         self.model = model
         self.painter = ScaledPainter(self.axes, model)
-        self.setup()
+        self.setup_values()
 
         self.h1_box.valueChanged.connect(self.h1_change)
         self.h2_box.valueChanged.connect(self.h2_change)
@@ -233,10 +236,15 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
         self.collimator_optics_button.clicked.connect(self.collimator_optics_switch)
         self.telescope_optics_button.clicked.connect(self.telescope_optics_switch)
 
-    def add_pointer(self, event: MouseEvent) -> None:
-        pass
+    def handle_click(self, event: MouseEvent) -> None:
+        if event.dblclick and event.button == MouseButton.LEFT:
+            pass
 
-    def setup(self) -> None:
+        if not event.dblclick and event.button == MouseButton.RIGHT:
+            self.painter.draw()
+            self.view.draw()
+
+    def setup_values(self) -> None:
         h1 = self.model.chamber.ctube.first_collimator.diameter
         h2 = self.model.chamber.ctube.second_collimator.diameter
         d1 = self.model.chamber.ctube.second_collimator.x_position - self.model.chamber.ctube.first_collimator.x_position
@@ -255,8 +263,13 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
         self.telescope2_slider.setValue(theta2)
         self.telescope3_slider.setValue(theta3)
 
+        self.target_move()
+        self.telescope1_move()
+        self.telescope2_move()
+        self.telescope3_move()
+
     def draw(self) -> None:
-        self.painter.draw()
+        self.painter.draw(autoscale=False)
         self.view.draw()
 
     def output(self) -> None:
@@ -275,13 +288,37 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
         pass
 
     def telescope1_move(self) -> None:
-        print(self.telescope1_slider.value())
+        value = self.telescope1_slider.value()
+        info = self.telescope1_label.text()
+        new_info = info[:info.index(':')]
+
+        new_info = new_info + f': {value} deg.'
+        self.telescope1_label.setText(new_info)
+
+        self.model.chamber.rotate_telescope(0, value)
+        self.draw()
 
     def telescope2_move(self) -> None:
-        print(self.telescope2_slider.value())
+        value = self.telescope2_slider.value()
+        info = self.telescope2_label.text()
+        new_info = info[:info.index(':')]
+
+        new_info = new_info + f': {value} deg.'
+        self.telescope2_label.setText(new_info)
+
+        self.model.chamber.rotate_telescope(1, value)
+        self.draw()
 
     def telescope3_move(self) -> None:
-        print(self.telescope3_slider.value())
+        value = self.telescope3_slider.value()
+        info = self.telescope3_label.text()
+        new_info = info[:info.index(':')]
+
+        new_info = new_info + f': {value} deg.'
+        self.telescope3_label.setText(new_info)
+
+        self.model.chamber.rotate_telescope(2, value)
+        self.draw()
 
     def target_move(self) -> None:
         value = self.target_slider.value()
@@ -303,7 +340,8 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
         self.draw()
 
     def open_settings(self) -> None:
-        pass
+        self.settings = SettingsWindow(self.model.chamber)
+        self.settings.show()
 
     def collimator_optics_switch(self) -> None:
         self.painter.switch_collimator_optics()

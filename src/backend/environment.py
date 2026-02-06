@@ -38,7 +38,8 @@ class Chamber:
         self.target.rotate(dtheta)
 
     def rotate_telescope(self, index: int, angle: float) -> None:
-        pass
+        dtheta = angle - self.telescopes[index].theta
+        self.telescopes[index].rotate(dtheta)
 
     def draw(self, axis: Axes) -> None:
         vertices = self.polygon.separate(self.polygon.find_collisions(self.diameter))
@@ -118,7 +119,6 @@ class Environment:
     def rotate(self, dtheta: float) -> None:
         self._theta += dtheta
         self._theta %= 360
-        self._theta = 360 - self._theta if self._is_clockwise else self._theta
 
     def draw(self, axis: Axes, plane: str = 'xy') -> None:
         pass
@@ -150,11 +150,14 @@ class Collimator(Environment):
     def height(self) -> float:
         return 4 * self._d
     
-    def draw(self, axis: Axes, plane: str = 'xy', theta: float = 0.0) -> None:
+    def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False, is_clockwise: bool = True) -> None:
         x1, y1, z1 = self._x, self._y, self._z
         x2, y2, z2 = self._x, self._y, self._z
 
         if plane == 'xy':
+            theta = 360 - self._theta if is_clockwise else self._theta
+            theta = 0 if no_rotation else theta
+
             y1 -= 0.5 * self.height 
             axis.add_patch(Rectangle(
                 (x1, y1), self._t, self.height / 2 - self._d / 2, angle=theta, rotation_point=(0.0, 0.0), color='black', label='collimator'
@@ -218,12 +221,12 @@ class Detector(Environment):
 
         if plane == 'xy':
             y -= 0.5 * detector_height
-
+            theta = 360 - self._theta if self._is_clockwise else self._theta
             axis.add_patch(Rectangle(
                 (x, y), 
                 detector_width, 
                 detector_height, 
-                angle=0 if no_rotation else self._theta,
+                angle=0 if no_rotation else theta,
                 rotation_point=(0.0, 0.0), 
                 color="blue",
                 label='detector'
@@ -267,14 +270,15 @@ class Tube(Environment):
 
     def z_positions(self) -> list[float]:
         return [self._f.z_position, self._s.z_position]
+    
+    def rotate(self, dtheta: float) -> None:
+        super().rotate(dtheta)
+        self._f.rotate(dtheta)
+        self._s.rotate(dtheta)
 
     def draw(self, axis: Axes, plane: str = 'xy', no_rotation: bool = False) -> None:
-        if no_rotation:
-            self._f.draw(axis, plane)
-            self._s.draw(axis, plane)
-        else:
-            self._f.draw(axis, plane, theta=self._theta)
-            self._s.draw(axis, plane, theta=self._theta)
+        self._f.draw(axis, plane, no_rotation, self.is_clockwise)
+        self._s.draw(axis, plane, no_rotation, self.is_clockwise)
 
 
 class CollimationTube(Tube):

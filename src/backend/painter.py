@@ -11,17 +11,17 @@ class ScaledPainter:
 
         self.is_collimator_optics_enable = False
         self.is_telescope_optics_enable = False
-        self.is_labels_enable = False
+        self.is_labels_enable = True
 
         self.draw()
 
-    def draw(self) -> None:
+    def draw(self, autoscale: bool = True) -> None:
+        xmin, xmax = self.axis.get_xlim()
+        ymin, ymax = self.axis.get_ylim()
+
         self.axis.clear()
 
         self.model.chamber.draw(self.axis)
-
-        xmin, xmax = self.axis.get_xlim()
-        self.axis.plot([xmin, xmax], [0, 0], '--', color='red', label='beam line')
 
         if self.is_collimator_optics_enable:
             self.draw_collimator_optics()
@@ -34,6 +34,13 @@ class ScaledPainter:
         self.axis.set_title(f'Full View of Chamber')
         self.axis.set_aspect('equal')
         self.axis.grid()
+
+        if autoscale:
+            self.axis.relim()
+            self.axis.autoscale_view()
+        else:
+            self.axis.set_xlim(xmin, xmax)
+            self.axis.set_ylim(ymin, ymax)
 
     def clear_labels(self) -> tuple[list, list]:
         handles, labels = self.axis.get_legend_handles_labels()
@@ -66,6 +73,7 @@ class ScaledPainter:
         
         for i in range(len(self.model.chamber.telescopes)):
             angle = self.model.chamber.telescopes[i].theta
+            angle = 360 - angle if self.model.chamber.telescopes[i].is_clockwise else angle
             transform = Affine2D().rotate_deg(angle) + self.axis.transData
 
             self.axis.scatter(coordinates[i][0], coordinates[i][1], transform=transform, color='blue')
@@ -75,15 +83,12 @@ class ScaledPainter:
 
     def switch_collimator_optics(self) -> None:
         self.is_collimator_optics_enable = not self.is_collimator_optics_enable
-        self.draw()
 
     def switch_telescope_optics(self) -> None:
         self.is_telescope_optics_enable = not self.is_telescope_optics_enable
-        self.draw()
 
     def switch_labels(self) -> None:
         self.is_labels_enable = not self.is_labels_enable
-        self.draw()
 
     def add_pointer(self, x: float) -> None:
         pass
