@@ -33,6 +33,15 @@ class Chamber:
     def telescopes(self) -> list[Telescope]:
         return self.__telescopes
     
+    def change_ctube_length(self, new: float) -> None:
+        old = self.ctube.length
+        self.ctube.first_collimator.move(old - new, 0, 0)
+    
+    def move_ctube(self, new_distance: float) -> None:
+        old_distance = self.target.x_position - self.ctube.second_collimator.x_position
+        self.ctube.first_collimator.move(old_distance - new_distance, 0, 0)
+        self.ctube.second_collimator.move(old_distance - new_distance, 0, 0)
+    
     def rotate_target(self, angle: float) -> None:
         dtheta = angle - self.target.theta
         self.target.rotate(dtheta)
@@ -171,12 +180,12 @@ class Collimator(Environment):
         if plane == 'xz':
             z1 -= 0.5 * self.height
             axis.add_patch(Rectangle(
-                (x1, z1), self._t, self.height / 2 - self._d, color='black', label='collimator'
+                (x1, z1), self._t, self.height / 2 - self._d / 2, color='black', label='collimator'
             ))
 
             z2 += 0.5 * self.diameter
             axis.add_patch(Rectangle(
-                (x2, z2), self._t, self.height / 2 - self._d, color='black', label='collimator'
+                (x2, z2), self._t, self.height / 2 - self._d / 2, color='black', label='collimator'
             ))
     
 
@@ -234,7 +243,7 @@ class Detector(Environment):
 
         if plane == 'xz':
             z -= 0.5 * detector_height
-            axis.add_patch(Rectangle((x, z), detector_width, detector_height, color="blue"))
+            axis.add_patch(Rectangle((x, z), detector_width, detector_height, color="blue", label='detector'))
 
 
 class Tube(Environment):

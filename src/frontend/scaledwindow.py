@@ -222,6 +222,7 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
         self.model = model
         self.painter = ScaledPainter(self.axes, model)
         self.setup_values()
+        self.show_output()
 
         self.h1_box.valueChanged.connect(self.h1_change)
         self.h2_box.valueChanged.connect(self.h2_change)
@@ -272,20 +273,56 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
         self.painter.draw(autoscale=False)
         self.view.draw()
 
-    def output(self) -> None:
-        pass
+    def show_output(self) -> None:
+        output = f'Spot on Target: {round(self.model.spot_on_target(), 3)} mm\n\n'
+
+        detector_spots = self.model.spot_on_detector()
+        detector_resols = self.model.angle_resolution()
+        for i in range(len(detector_spots)):
+            output += f'Spot on Detector #{i + 1}: {round(detector_spots[i], 3)} mm\n'
+            output += f'Angle resolution # {i + 1}: {round(detector_resols[i], 3)} deg.\n\n'
+
+        self.output.setText(output)
 
     def h1_change(self) -> None:
-        pass
+        new = self.h1_box.value()
+        if new <= 0.0:
+            return
+        
+        self.model.chamber.ctube.first_collimator.diameter = new
+
+        self.draw()
+        self.show_output()
 
     def h2_change(self) -> None:
-        pass
+        new = self.h2_box.value()
+        if new <= 0.0:
+            return
+        
+        self.model.chamber.ctube.second_collimator.diameter = new
+
+        self.draw()
+        self.show_output()
 
     def d1_change(self) -> None:
-        pass
+        new = self.d1_box.value()
+        if new <= 0.0:
+            return
+        
+        self.model.chamber.change_ctube_length(new)
+
+        self.draw()
+        self.show_output()
 
     def d2_change(self) -> None:
-        pass
+        new = self.d2_box.value()
+        if new <= 0.0:
+            return
+        
+        self.model.chamber.move_ctube(new)
+
+        self.draw()
+        self.show_output()
 
     def telescope1_move(self) -> None:
         value = self.telescope1_slider.value()

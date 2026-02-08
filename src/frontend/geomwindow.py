@@ -163,7 +163,7 @@ class GeomWindow(QMainWindow, Ui_GeomWindow):
         output += f'Angle resolution: {round(self.model.angle_resolution(), 3)} deg.\n\n'
 
         if self.pointer is not None:
-            output += f'Cutting Collimator Radius must be: {round(self.model.spot_at_distance(self.pointer), 3)}'
+            output += f'Cutting Collimator Radius must be: {round(self.model.spot_at_position(self.pointer), 3)}'
 
         self.output.setText(output)
 

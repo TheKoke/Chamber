@@ -106,21 +106,27 @@ class SettingsWindow(QDialog, Ui_SettingsWindow):
         self.telescope1_button.clicked.connect(self.open_first_telescope)
         self.telescope2_button.clicked.connect(self.open_second_telescope)
         self.telescope3_button.clicked.connect(self.open_third_telescope)
+        self.okbutton.clicked.connect(self.close)
 
     def open_first_collimator(self) -> None:
-        pass
+        self.opened = CollimatorWindow(self.chamber.ctube.first_collimator)
+        self.opened.show()
 
     def open_second_collimator(self) -> None:
-        pass
+        self.opened = CollimatorWindow(self.chamber.ctube.second_collimator)
+        self.opened.show()
 
     def open_first_telescope(self) -> None:
-        pass
+        self.opened = TelescopeWindow(self.chamber.telescopes[0])
+        self.opened.show()
 
     def open_second_telescope(self) -> None:
-        pass
+        self.opened = TelescopeWindow(self.chamber.telescopes[1])
+        self.opened.show()
 
     def open_third_telescope(self) -> None:
-        pass
+        self.opened = TelescopeWindow(self.chamber.telescopes[2])
+        self.opened.show()
 
 
 if __name__ == "__main__":

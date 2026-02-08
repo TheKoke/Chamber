@@ -161,8 +161,9 @@ class UnscaledPainter:
 
     def draw_reflections(self) -> None:
         reflections = self.model.collimator_reflections(self.current_plane)
-        for refl in reflections:
-            self.axis.plot(refl[0], refl[1], color='green', label='reflections')
+        for i in range(len(reflections)):
+            self.axis.plot(reflections[i][0], reflections[i][1], color='green', label='reflections')
+            self.axis.plot(reflections[i][2], reflections[i][3], color='green')
 
     def switch_optics(self) -> None:
         self.is_optics_enable = not self.is_optics_enable

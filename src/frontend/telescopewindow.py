@@ -158,9 +158,9 @@ class TelescopeWindow(QDialog, Ui_TelescopeWindow):
         self.second_button.clicked.connect(self.open_second)
 
     def set_values(self) -> None:
-        self.xcoord_box.setValue(self.telescope.x_position)
-        self.ycoord_box.setValue(self.telescope.y_position)
-        self.zcoord_box.setValue(self.telescope.z_position)
+        self.xcoord_box.setValue(self.telescope.detector.x_position)
+        self.ycoord_box.setValue(self.telescope.detector.y_position)
+        self.zcoord_box.setValue(self.telescope.detector.z_position)
         self.angle_box.setValue(self.telescope.theta)
 
     def open_first(self) -> None:

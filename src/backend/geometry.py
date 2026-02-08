@@ -10,69 +10,77 @@ class Optics:
     def tube(self) -> Tube:
         return self.__tube
     
-    def get_coefficients(self, plane: str = "xy") -> tuple[numpy.ndarray, numpy.ndarray]:
+    def get_lines(self, stop: float, plane: str = 'xy') -> list[numpy.ndarray]:
+        coeffs = self.get_coefficients(plane)
+        
+    
+    def get_coefficients(self, plane: str) -> tuple[numpy.ndarray, numpy.ndarray]:
+        diam1, diam2 = self.__tube.first_collimator.diameter, self.__tube.second_collimator.diameter
+        x1, x2 = self.__tube.first_collimator.x_position, self.__tube.second_collimator.x_position
+
         if plane == "xy":
-            diam1, diam2 = self.__tube.first_collimator.diameter, self.__tube.second_collimator.diameter
-            x1, x2 = self.__tube.first_collimator.x_position, self.__tube.second_collimator.x_position
             y1, y2 = self.__tube.first_collimator.y_position, self.__tube.second_collimator.y_position
 
-            y1 += diam1 / 2
-            y2 -= diam2 / 2
-
         if plane == "xz":
-            x1, x2 = self.__tube.first_collimator.x_position, self.__tube.second_collimator.x_position
             y1, y2 = self.__tube.first_collimator.z_position, self.__tube.second_collimator.z_position
+
+        x1 += self.__tube.first_collimator.thickness
+        x2 += self.__tube.second_collimator.thickness
+
+        y1 += diam1 / 2
+        y2 -= diam2 / 2
 
         first_coeffs = numpy.linalg.solve(numpy.array([[x1, 1], [x2, 1]]), numpy.array([y1, y2]))
         return first_coeffs, -first_coeffs
  
 
 class Reflections:
-    def __init__(self, first: Collimator, second: Collimator, target: Target, telescope: Telescope):
-        self.__first = first
-        self.__second = second
-        self.__target = target
+    def __init__(self, ctube: CollimationTube, telescope: Telescope):
+        self.__ctube = ctube
         self.__telescope = telescope
 
-    def get_coefficients(self, plane: str) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
+    def get_lines(self, plane: str) -> list[list[numpy.ndarray, numpy.ndarray]]:
         lines = 10
 
-        c1 = self.__first
-        c2 = self.__second
+        c1 = self.__ctube.first_collimator
+        c2 = self.__ctube.second_collimator
 
         starting_x = c1.x_position
+        reflecting_xs = numpy.linspace(c2.x_position, c2.x_position + c2.thickness, lines)
+        stopping_x = self.__telescope.detector.x_position
 
-        starting_ceil_y = c1.y_position + c1.diameter / 2
-        starting_floor_y = c1.y_position - c1.diameter / 2
+        if plane == 'xy':
+            starting_ceil = c1.y_position + c1.diameter / 2
+            starting_floor = c1.y_position - c1.diameter / 2
 
-        reflecting_xs = numpy.linspace(c2.x_position, c2.x_position + c2.thickness, lines) # numpy.linspace(0, 1, 10) => [0.0, 0.1, 0.2, 0.3,...,1.0]
+            reflecting_ceil = (c2.y_position + c2.diameter / 2) * numpy.ones_like(reflecting_xs)
+            reflecting_floor = (c2.y_position - c2.diameter / 2) * numpy.ones_like(reflecting_xs)
 
-        reflecting_floor_ys = (c2.y_position - c2.diameter / 2) * numpy.ones_like(reflecting_xs)
-        reflecting_ceil_ys = (c2.y_position + c2.diameter / 2) * numpy.ones_like(reflecting_xs)
+        if plane == 'xz':
+            starting_ceil = c1.z_position + c1.diameter / 2
+            starting_floor = c1.z_position - c1.diameter / 2
 
-        stopping_x = self.__telescope.detector_position[0]
+            reflecting_ceil = (c2.z_position + c2.diameter / 2) * numpy.ones_like(reflecting_xs)
+            reflecting_floor = (c2.z_position - c2.diameter / 2) * numpy.ones_like(reflecting_xs)
 
         reflections = []
         for i in range(lines):
-            reflections.extend(self.__reflections_by(
-                (starting_x, starting_ceil_y),
-                (reflecting_xs[i], reflecting_floor_ys[i]),
+            reflections.append(self.__reflections_by(
+                (starting_x, starting_ceil),
+                (reflecting_xs[i], reflecting_floor[i]),
                 stopping_x
             ))
 
         for i in range(lines):
-            reflections.extend(self.__reflections_by(
-                (starting_x, starting_floor_y),
-                (reflecting_xs[i], reflecting_ceil_ys[i]),
+            reflections.append(self.__reflections_by(
+                (starting_x, starting_floor),
+                (reflecting_xs[i], reflecting_ceil[i]),
                 stopping_x
             ))
 
         return reflections
 
-    def __reflections_by(self, 
-                         start: tuple[float, float], 
-                         reflect: tuple[float, float], 
-                         stop_x: float) -> list[tuple[numpy.ndarray, numpy.ndarray]]:
+    def __reflections_by(self, start: tuple[float, float], reflect: tuple[float, float], stop_x: float) -> list[numpy.ndarray]:
         start_x, start_y = start
         reflect_x, reflect_y = reflect
 
@@ -84,9 +92,9 @@ class Reflections:
         outgoing_xs = numpy.array([reflect_x, stop_x])
 
         ingoing_ys = coeffs[0] * ingoing_xs + coeffs[1]
-        outgoing_ys = -coeffs[0] * outgoing_xs - coeffs[1]
+        outgoing_ys = -coeffs[0] * outgoing_xs + coeffs[0] * reflect[0] + reflect[1]
 
-        return [(ingoing_xs, ingoing_ys), (outgoing_xs, outgoing_ys)]
+        return [ingoing_xs, ingoing_ys, outgoing_xs, outgoing_ys]
 
 
 class Geometry:
@@ -98,40 +106,41 @@ class Geometry:
         return self.__chamber
 
     @staticmethod
-    def projection_formula(d1: float, h1: float, d2: float) -> float:
-        return h1 * (d2 / d1)
+    def projection_formula(l1: float, h1: float, l2: float) -> float:
+        return h1 * (l2 / l1)
     
-    def spot_at_distance(self, distance: float) -> float:
+    def spot_at_position(self, position: float) -> float:
         h1 = self.__chamber.ctube.first_collimator.diameter
         h2 = self.__chamber.ctube.second_collimator.diameter
+        l0 = self.__chamber.ctube.length
         
-        crossing_h = self.__chamber.ctube.second_collimator.x_position - h1 * self.__chamber.ctube.second_collimator.x_position / (h1 + h2)
-        d1 = self.__chamber.ctube.second_collimator.x_position - crossing_h
+        l1 = l0 - h1 * l0 / (h1 + h2)
+        l2 = l0 - l1
+        l3 = (position - self.__chamber.ctube.first_collimator.x_position) - l1
 
-        return Geometry.projection_formula(d1, h2, distance - crossing_h)
+        return Geometry.projection_formula(l2, h2, l3)
     
     def spot_on_target(self) -> float:
-        return self.spot_at_distance(self.__chamber.target.x_position)
+        return self.spot_at_position(self.__chamber.target.x_position)
 
-    def spot_on_detector(self) -> float:
-        return self.spot_at_distance(self.__chamber.telescopes[i].detector_position[0] for i in range(len(self.__chamber.telescopes)))
+    def spot_on_detector(self) -> list[float]:
+        positions = [self.__chamber.telescopes[i].detector.x_position for i in range(len(self.__chamber.telescopes))]
+        return [self.spot_at_position(positions[i]) for i in range(len(positions))]
     
-    def angle_resolution(self) -> float:
-        for i in range(len(self.__chamber.telescopes)):
-            angle_scale = 360 / (2 * numpy.pi * (self.__chamber.telescopes[i].detector_position[0] - self.__chamber.target.x_position))
+    def angle_resolution(self) -> list[float]:
+        spots = self.spot_on_detector()
+        scale = []
 
-        return angle_scale * self.spot_on_detector() / 2
+        for i in range(len(self.__chamber.telescopes)):
+            scale.append(360 / (2 * numpy.pi * abs(self.__chamber.telescopes[i].detector.x_position - self.__chamber.target.x_position)))
+
+        return [scale[i] * spots[i] for i in range(len(spots))]
     
     def collimator_optics(self, plane: str = 'xy') -> list[list[float]]:
         ctube_optics = Optics(self.__chamber.ctube)
         first_coeffs, second_coeffs = ctube_optics.get_coefficients(plane)
 
-        if plane == 'xy':
-            xs = self.__double_coordinates([*self.__chamber.ctube.x_positions(), self.chamber.target.x_position])
-
-        if plane == 'xz':
-            xs = self.__double_coordinates([*self.__chamber.ctube.y_positions(), self.chamber.target.y_position])
-
+        xs = self.__double_coordinates([*self.__chamber.ctube.x_positions(), self.chamber.target.x_position])
         ys = []
         for i in range(0, len(xs), 2):
             ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
@@ -140,7 +149,8 @@ class Geometry:
         return [xs, ys]
     
     def collimator_reflections(self, plane: str = 'xy') -> list[tuple[numpy.ndarray, numpy.ndarray]]:
-        ctube_reflections = Reflections()
+        ctube_reflections = Reflections(self.chamber.ctube, self.chamber.telescopes[0])
+        return ctube_reflections.get_lines(plane)
 
     def telescope_optics(self) -> list[list[list[float]]]:
         result = []

@@ -1,9 +1,9 @@
 from backend.geometry import Geometry
 from backend.painter import UnscaledPainter
 
-from frontend.targetwindow import Target
 from frontend.spotwindow import SpotWindow
-from frontend.detectorwindow import Detector
+from frontend.targetwindow import TargetWindow
+from frontend.detectorwindow import DetectorWindow
 from frontend.collimatorwindow import CollimatorWindow
 
 from matplotlib.figure import Figure
@@ -202,6 +202,8 @@ class UnscaledWindow(QMainWindow, Ui_UnscaledWindow):
 
         self.model = model
         self.painter = UnscaledPainter(self.axes, model)
+        self.setup()
+        self.show_output()
 
         self.h1_box.valueChanged.connect(self.h1_change)
         self.h2_box.valueChanged.connect(self.h2_change)
@@ -224,56 +226,108 @@ class UnscaledWindow(QMainWindow, Ui_UnscaledWindow):
         pass
 
     def setup(self) -> None:
-        pass
+        h1 = self.model.chamber.ctube.first_collimator.diameter
+        h2 = self.model.chamber.ctube.second_collimator.diameter
 
-    def draw(self) -> None:
-        self.painter.draw()
-        self.view.draw()
+        d1 = self.model.chamber.ctube.length
+        d2 = self.model.chamber.target.x_position - self.model.chamber.ctube.second_collimator.x_position
+        d3 = self.model.chamber.telescopes[0].detector.x_position - self.model.chamber.target.x_position
 
-    def output(self) -> None:
-        pass
+        self.h1_box.setValue(h1)
+        self.h2_box.setValue(h2)
+        self.d1_box.setValue(d1)
+        self.d2_box.setValue(d2)
+        self.d3_box.setValue(d3)
+
+    def show_output(self) -> None:
+        output = f'Spot on Target: {round(self.model.spot_on_target(), 3)} mm\n\n'
+        output += f'Spot on Detector: {round(self.model.spot_on_detector()[0], 3)} mm\n\n'
+        output += f'Angle resolution: {round(self.model.angle_resolution()[0], 3)} deg.\n\n'
+
+        self.output.setText(output)
 
     def h1_change(self) -> None:
-        pass
+        new = self.h1_box.value()
+        if new <= 0.0:
+            return
+        
+        self.model.chamber.ctube.first_collimator.diameter = new
+
+        self.painter.draw(self.painter.current_plane)
+        self.view.draw()
+        self.show_output()
 
     def h2_change(self) -> None:
-        pass
+        new = self.h2_box.value()
+        if new <= 0.0:
+            return
+        
+        self.model.chamber.ctube.second_collimator.diameter = new
+
+        self.painter.draw(self.painter.current_plane)
+        self.view.draw()
+        self.show_output()
 
     def d1_change(self) -> None:
-        pass
+        new = self.d1_box.value()
+        if new <= 0.0:
+            return
+        
+        self.model.chamber.change_ctube_length(new)
+
+        self.painter.draw(self.painter.current_plane)
+        self.view.draw()
+        self.show_output()
 
     def d2_change(self) -> None:
-        pass
+        new = self.d2_box.value()
+        if new <= 0.0:
+            return
+        
+        self.model.chamber.move_ctube(new)
+
+        self.painter.draw(self.painter.current_plane)
+        self.view.draw()
+        self.show_output()
 
     def d3_change(self) -> None:
         pass
 
     def open_collimator1(self) -> None:
-        pass
+        self.opened = CollimatorWindow(self.model.chamber.ctube.first_collimator)
+        self.opened.show()
     
     def open_collimator2(self) -> None:
-        pass
+        self.opened = CollimatorWindow(self.model.chamber.ctube.second_collimator)
+        self.opened.show()
 
     def open_target(self) -> None:
-        pass
+        self.opened = TargetWindow(self.model.chamber.target)
+        self.opened.show()
 
     def open_detector(self) -> None:
-        pass
+        self.opened = DetectorWindow(self.model.chamber.telescopes[0].detector)
+        self.opened.show()
 
     def xy_plane(self) -> None:
-        pass
+        self.painter.draw('xy')
+        self.view.draw()
 
     def xz_plane(self) -> None:
-        pass
+        self.painter.draw('xz')
+        self.view.draw()
 
     def switch_optics(self) -> None:
-        pass
+        self.painter.switch_optics()
+        self.view.draw()
 
     def switch_reflections(self) -> None:
-        pass
+        self.painter.switch_reflections()
+        self.view.draw()
 
     def open_spot(self) -> None:
-        pass
+        self.opened = SpotWindow(self.model)
+        self.opened.show()
 
 
 if __name__ == "__main__":
