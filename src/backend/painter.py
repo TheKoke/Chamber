@@ -63,23 +63,21 @@ class ScaledPainter:
     def draw_collimator_optics(self) -> None:
         coordinates = self.model.collimator_optics()
 
-        self.axis.scatter(coordinates[0], coordinates[1], color='black')
-        
-        self.axis.plot([coordinates[0][0], coordinates[0][-2]], [coordinates[1][0], coordinates[1][-2]], color='red', label='collim. scatter')
-        self.axis.plot([coordinates[0][1], coordinates[0][-1]], [coordinates[1][1], coordinates[1][-1]], color='red')
+        for i in range(len(coordinates)):
+            self.axis.scatter(coordinates[i][0], coordinates[i][1], color='black')
+            self.axis.plot(coordinates[i][0], coordinates[i][1], color='red', label='optic scatter')
 
     def draw_telescope_optics(self) -> None:
         coordinates = self.model.telescope_optics()
         
-        for i in range(len(self.model.chamber.telescopes)):
+        for i in range(len(coordinates)):
             angle = self.model.chamber.telescopes[i].theta
             angle = 360 - angle if self.model.chamber.telescopes[i].is_clockwise else angle
             transform = Affine2D().rotate_deg(angle) + self.axis.transData
 
-            self.axis.scatter(coordinates[i][0], coordinates[i][1], transform=transform, color='blue')
-            
-            self.axis.plot([coordinates[i][0][0], coordinates[i][0][-2]], [coordinates[i][1][0], coordinates[i][1][-2]], transform=transform, color='blue', label='telesc. scatter')
-            self.axis.plot([coordinates[i][0][1], coordinates[i][0][-1]], [coordinates[i][1][1], coordinates[i][1][-1]], transform=transform, color='blue')
+            for j in range(len(coordinates[i])):
+                self.axis.scatter(coordinates[i][j][0], coordinates[i][j][1], transform=transform, color='blue')
+                self.axis.plot(coordinates[i][j][0], coordinates[i][j][1], transform=transform, color='blue', label='telesc. scatter')
 
     def switch_collimator_optics(self) -> None:
         self.is_collimator_optics_enable = not self.is_collimator_optics_enable
@@ -154,10 +152,9 @@ class UnscaledPainter:
     def draw_optics(self) -> None:
         coordinates = self.model.collimator_optics(self.current_plane)
 
-        self.axis.scatter(coordinates[0], coordinates[1], color='black')
-
-        self.axis.plot([coordinates[0][0], coordinates[0][-2]], [coordinates[1][0], coordinates[1][-2]], color='red', label='optic scatter')
-        self.axis.plot([coordinates[0][1], coordinates[0][-1]], [coordinates[1][1], coordinates[1][-1]], color='red')
+        for i in range(len(coordinates)):
+            self.axis.scatter(coordinates[i][0], coordinates[i][1], color='black')
+            self.axis.plot(coordinates[i][0], coordinates[i][1], color='red', label='optic scatter')
 
     def draw_reflections(self) -> None:
         reflections = self.model.collimator_reflections(self.current_plane)

@@ -10,28 +10,36 @@ class Optics:
     def tube(self) -> Tube:
         return self.__tube
     
-    def get_lines(self, stop: float, plane: str = 'xy') -> list[numpy.ndarray]:
+    def get_lines(self, stop: float, plane: str = 'xy') -> list[list[numpy.ndarray]]:
         coeffs = self.get_coefficients(plane)
+
+        x1, x2 = self.__tube.x_positions()
+        x1 += self.__tube.first_collimator.thickness
+        x2 += self.__tube.second_collimator.thickness
+        xs = numpy.array([x1, x2, stop])
         
-    
+        lines = []
+        for i in range(len(coeffs)):
+            lines.append([xs, coeffs[i][0] * xs + coeffs[i][1]])
+
+        return lines
+
     def get_coefficients(self, plane: str) -> tuple[numpy.ndarray, numpy.ndarray]:
         diam1, diam2 = self.__tube.first_collimator.diameter, self.__tube.second_collimator.diameter
-        x1, x2 = self.__tube.first_collimator.x_position, self.__tube.second_collimator.x_position
+        x1, x2 = self.__tube.x_positions()
 
-        if plane == "xy":
+        if plane == 'xy':
             y1, y2 = self.__tube.first_collimator.y_position, self.__tube.second_collimator.y_position
 
-        if plane == "xz":
+        if plane == 'xz':
             y1, y2 = self.__tube.first_collimator.z_position, self.__tube.second_collimator.z_position
 
         x1 += self.__tube.first_collimator.thickness
         x2 += self.__tube.second_collimator.thickness
 
-        y1 += diam1 / 2
-        y2 -= diam2 / 2
-
-        first_coeffs = numpy.linalg.solve(numpy.array([[x1, 1], [x2, 1]]), numpy.array([y1, y2]))
-        return first_coeffs, -first_coeffs
+        first_coeffs = numpy.linalg.solve(numpy.array([[x1, 1], [x2, 1]]), numpy.array([y1 + diam1 / 2, y2 - diam2 / 2]))
+        second_coeffs = numpy.linalg.solve(numpy.array([[x1, 1], [x2, 1]]), numpy.array([y1 - diam1 / 2, y2 + diam2 / 2]))
+        return first_coeffs, second_coeffs
  
 
 class Reflections:
@@ -39,7 +47,7 @@ class Reflections:
         self.__ctube = ctube
         self.__telescope = telescope
 
-    def get_lines(self, plane: str) -> list[list[numpy.ndarray, numpy.ndarray]]:
+    def get_lines(self, plane: str) -> list[list[numpy.ndarray]]:
         lines = 10
 
         c1 = self.__ctube.first_collimator
@@ -136,19 +144,11 @@ class Geometry:
 
         return [scale[i] * spots[i] for i in range(len(spots))]
     
-    def collimator_optics(self, plane: str = 'xy') -> list[list[float]]:
+    def collimator_optics(self, plane: str = 'xy') -> list[list[numpy.ndarray]]:
         ctube_optics = Optics(self.__chamber.ctube)
-        first_coeffs, second_coeffs = ctube_optics.get_coefficients(plane)
-
-        xs = self.__double_coordinates([*self.__chamber.ctube.x_positions(), self.chamber.target.x_position])
-        ys = []
-        for i in range(0, len(xs), 2):
-            ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
-            ys.append(second_coeffs[0] * xs[i] + second_coeffs[1])
-        
-        return [xs, ys]
+        return ctube_optics.get_lines(self.chamber.target.x_position, plane)
     
-    def collimator_reflections(self, plane: str = 'xy') -> list[tuple[numpy.ndarray, numpy.ndarray]]:
+    def collimator_reflections(self, plane: str = 'xy') -> list[list[numpy.ndarray]]:
         ctube_reflections = Reflections(self.chamber.ctube, self.chamber.telescopes[0])
         return ctube_reflections.get_lines(plane)
 
@@ -157,51 +157,21 @@ class Geometry:
 
         for telescope in self.__chamber.telescopes:
             tele_optics = Optics(telescope)
-            first_coeffs, second_coeffs = tele_optics.get_coefficients()
-
-            xs = [*self.__double_coordinates(telescope.x_positions())[::-1]]
-            ys = []
-
-            for i in range(0, len(xs), 2):
-                ys.append(first_coeffs[0] * xs[i] + first_coeffs[1])
-                ys.append(second_coeffs[0] * xs[i] + second_coeffs[1])
-
-            stops = self.find_stop_points(telescope, (first_coeffs, second_coeffs))
-
-            xs.extend(stops[0])
-            ys.extend(stops[1])
-            
-            result.append([xs, ys])
+            coeffs = tele_optics.get_coefficients('xy')
+            stop = self.find_stop_point(telescope, coeffs[0])
+            result.append(tele_optics.get_lines(stop))
 
         return result
     
-    def find_stop_points(self, telescope: Telescope, line_coefficients: tuple[numpy.ndarray, numpy.ndarray]) -> list[list[float]]:
+    def find_stop_point(self, telescope: Telescope, line_coefficients: numpy.ndarray) -> float:
         dx, dy = telescope.detector.x_position, telescope.detector.y_position
-        first, second = line_coefficients
+        eq_coeffs = [1 + line_coefficients[0]**2, 2 * line_coefficients[0] * line_coefficients[1], line_coefficients[1]**2 - (self.__chamber.diameter / 2)**2]
 
-        eq_coeffs1 = [1 + first[0]**2, 2 * first[0] * first[1], first[1]**2 - (self.__chamber.diameter / 2)**2]
-        eq_coeffs2 = [1 + second[0]**2, 2 * second[0] * second[1], second[1]**2 - (self.__chamber.diameter / 2)**2]
+        x_lim = numpy.roots(eq_coeffs)
+        y_lim = line_coefficients[0] * x_lim + line_coefficients[1]
 
-        x_lim1 = numpy.roots(eq_coeffs1)
-        y_lim1 = first[0] * x_lim1 + first[1]
+        return x_lim[numpy.sqrt((x_lim - dx)**2 + (y_lim - dy)**2).argmax()]
 
-        x_lim2 = numpy.roots(eq_coeffs2)
-        y_lim2 = second[0] * x_lim2 + second[1]
 
-        true_x1 = x_lim1[numpy.sqrt((x_lim1 - dx)**2 + (y_lim1 - dy)**2).argmax()]
-        true_y1 = y_lim1[numpy.sqrt((x_lim1 - dx)**2 + (y_lim1 - dy)**2).argmax()]
-
-        true_x2 = x_lim2[numpy.sqrt((x_lim2 - dx)**2 + (y_lim2 - dy)**2).argmax()]
-        true_y2 = y_lim2[numpy.sqrt((x_lim2 - dx)**2 + (y_lim2 - dy)**2).argmax()]
-
-        return [[true_x1, true_x2], [true_y1, true_y2]]
-    
-    def __double_coordinates(self, dots: list[float]) -> list[float]:
-        new = []
-        for i in dots:
-            new.append(i)
-            new.append(i)
-        return new
-    
 if __name__ == '__main__':
     pass

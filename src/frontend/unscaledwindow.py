@@ -202,7 +202,7 @@ class UnscaledWindow(QMainWindow, Ui_UnscaledWindow):
 
         self.model = model
         self.painter = UnscaledPainter(self.axes, model)
-        self.setup()
+        self.setup_values()
         self.show_output()
 
         self.h1_box.valueChanged.connect(self.h1_change)
@@ -225,7 +225,7 @@ class UnscaledWindow(QMainWindow, Ui_UnscaledWindow):
     def add_pointer(self, event: MouseEvent) -> None:
         pass
 
-    def setup(self) -> None:
+    def setup_values(self) -> None:
         h1 = self.model.chamber.ctube.first_collimator.diameter
         h2 = self.model.chamber.ctube.second_collimator.diameter
 
@@ -238,6 +238,12 @@ class UnscaledWindow(QMainWindow, Ui_UnscaledWindow):
         self.d1_box.setValue(d1)
         self.d2_box.setValue(d2)
         self.d3_box.setValue(d3)
+
+    def refresh(self) -> None:
+        self.painter.draw(self.painter.current_plane)
+        self.view.draw()
+        self.show_output()
+        self.setup_values()
 
     def show_output(self) -> None:
         output = f'Spot on Target: {round(self.model.spot_on_target(), 3)} mm\n\n'
@@ -252,10 +258,7 @@ class UnscaledWindow(QMainWindow, Ui_UnscaledWindow):
             return
         
         self.model.chamber.ctube.first_collimator.diameter = new
-
-        self.painter.draw(self.painter.current_plane)
-        self.view.draw()
-        self.show_output()
+        self.refresh()
 
     def h2_change(self) -> None:
         new = self.h2_box.value()
@@ -263,10 +266,7 @@ class UnscaledWindow(QMainWindow, Ui_UnscaledWindow):
             return
         
         self.model.chamber.ctube.second_collimator.diameter = new
-
-        self.painter.draw(self.painter.current_plane)
-        self.view.draw()
-        self.show_output()
+        self.refresh()
 
     def d1_change(self) -> None:
         new = self.d1_box.value()
@@ -274,10 +274,7 @@ class UnscaledWindow(QMainWindow, Ui_UnscaledWindow):
             return
         
         self.model.chamber.change_ctube_length(new)
-
-        self.painter.draw(self.painter.current_plane)
-        self.view.draw()
-        self.show_output()
+        self.refresh()
 
     def d2_change(self) -> None:
         new = self.d2_box.value()
@@ -285,28 +282,39 @@ class UnscaledWindow(QMainWindow, Ui_UnscaledWindow):
             return
         
         self.model.chamber.move_ctube(new)
-
-        self.painter.draw(self.painter.current_plane)
-        self.view.draw()
-        self.show_output()
+        self.refresh()
 
     def d3_change(self) -> None:
-        pass
+        new = self.d3_box.value()
+        if new <= 0.0:
+            return
+        
+        old = self.model.chamber.telescopes[0].detector.x_position - self.model.chamber.target.x_position
+        self.model.chamber.telescopes[0].move(new - old, 0, 0)
+        self.refresh()
 
     def open_collimator1(self) -> None:
         self.opened = CollimatorWindow(self.model.chamber.ctube.first_collimator)
+        self.opened.okbutton.buttons()[0].clicked.connect(self.refresh)
+        self.opened.okbutton.buttons()[1].clicked.connect(self.refresh)
         self.opened.show()
     
     def open_collimator2(self) -> None:
         self.opened = CollimatorWindow(self.model.chamber.ctube.second_collimator)
+        self.opened.okbutton.buttons()[0].clicked.connect(self.refresh)
+        self.opened.okbutton.buttons()[1].clicked.connect(self.refresh)
         self.opened.show()
 
     def open_target(self) -> None:
         self.opened = TargetWindow(self.model.chamber.target)
+        self.opened.okbutton.buttons()[0].clicked.connect(self.refresh)
+        self.opened.okbutton.buttons()[1].clicked.connect(self.refresh)
         self.opened.show()
 
     def open_detector(self) -> None:
         self.opened = DetectorWindow(self.model.chamber.telescopes[0].detector)
+        self.opened.okbutton.buttons()[0].clicked.connect(self.refresh)
+        self.opened.okbutton.buttons()[1].clicked.connect(self.refresh)
         self.opened.show()
 
     def xy_plane(self) -> None:

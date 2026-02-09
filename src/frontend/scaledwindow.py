@@ -269,6 +269,10 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
         self.telescope2_move()
         self.telescope3_move()
 
+    def refresh(self) -> None:
+        self.draw()
+        self.show_output()
+
     def draw(self) -> None:
         self.painter.draw(autoscale=False)
         self.view.draw()
@@ -291,8 +295,7 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
         
         self.model.chamber.ctube.first_collimator.diameter = new
 
-        self.draw()
-        self.show_output()
+        self.refresh()
 
     def h2_change(self) -> None:
         new = self.h2_box.value()
@@ -301,8 +304,7 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
         
         self.model.chamber.ctube.second_collimator.diameter = new
 
-        self.draw()
-        self.show_output()
+        self.refresh()
 
     def d1_change(self) -> None:
         new = self.d1_box.value()
@@ -311,8 +313,7 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
         
         self.model.chamber.change_ctube_length(new)
 
-        self.draw()
-        self.show_output()
+        self.refresh()
 
     def d2_change(self) -> None:
         new = self.d2_box.value()
@@ -321,8 +322,7 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
         
         self.model.chamber.move_ctube(new)
 
-        self.draw()
-        self.show_output()
+        self.refresh()
 
     def telescope1_move(self) -> None:
         value = self.telescope1_slider.value()
@@ -378,6 +378,7 @@ class ScaledWindow(QMainWindow, Ui_ScaledWindow):
 
     def open_settings(self) -> None:
         self.settings = SettingsWindow(self.model.chamber)
+        self.settings.okbutton.accepted.connect(self.refresh)
         self.settings.show()
 
     def collimator_optics_switch(self) -> None:

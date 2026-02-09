@@ -36,7 +36,7 @@ class Chamber:
     def change_ctube_length(self, new: float) -> None:
         old = self.ctube.length
         self.ctube.first_collimator.move(old - new, 0, 0)
-    
+
     def move_ctube(self, new_distance: float) -> None:
         old_distance = self.target.x_position - self.ctube.second_collimator.x_position
         self.ctube.first_collimator.move(old_distance - new_distance, 0, 0)
@@ -249,8 +249,8 @@ class Detector(Environment):
 class Tube(Environment):
     def __init__(self, first: Collimator, second: Collimator, theta: float = 0.0, is_clockwise: bool = True) -> None:
         x = first.x_position + first.thickness
-        y = first.y_position + first.height / 2
-        z = first.z_position + first.height / 2
+        y = first.y_position
+        z = first.z_position
 
         super().__init__(x, y, z, theta, is_clockwise)
         self._f = first
@@ -280,6 +280,11 @@ class Tube(Environment):
     def z_positions(self) -> list[float]:
         return [self._f.z_position, self._s.z_position]
     
+    def move(self, dx: float, dy: float, dz: float) -> None:
+        super().move(dx, dy, dz)
+        self._f.move(dx, dy, dz)
+        self._s.move(dx, dy, dz)
+    
     def rotate(self, dtheta: float) -> None:
         super().rotate(dtheta)
         self._f.rotate(dtheta)
@@ -306,6 +311,10 @@ class Telescope(Tube):
     @property
     def detector(self) -> Detector:
         return self._detector
+    
+    def move(self, dx: float, dy: float, dz: float) -> None:
+        super().move(dx, dy, dz)
+        self._detector.move(dx, dy, dz)
     
     def rotate(self, dtheta: float) -> None:
         super().rotate(dtheta)
