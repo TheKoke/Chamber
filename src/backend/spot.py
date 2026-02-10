@@ -48,7 +48,7 @@ class SpotModel:
         z2 = self.model.chamber.ctube.second_collimator.z_position
         dz = z2 - z1
 
-        return numpy.rad2deg(numpy.arctan2(dz, dy))
+        return 90 + numpy.rad2deg(numpy.arctan2(dz, dy))
 
     def calculate_width(self) -> float:
         d1 = self.model.chamber.ctube.first_collimator.diameter
